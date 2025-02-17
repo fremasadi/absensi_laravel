@@ -13,15 +13,16 @@ class Absensi extends Model
     protected $table = 'absensi';
 
     // Primary key
-    protected $primaryKey = 'id_absensi';
+    protected $primaryKey = 'id';
 
     // Kolom yang dapat diisi
     protected $fillable = [
-        'id_pengguna',
+        'id_user',
         'id_jadwal',
-        'waktu_masuk',
-        'waktu_keluar',
-        'durasi_terlambat',
+        'tanggal_absen',
+        'waktu_masuk_time',
+        'waktu_keluar_time',
+        'durasi_hadir',
         'status_kehadiran',
         'keterangan',
     ];
@@ -31,7 +32,7 @@ class Absensi extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class, 'id_pengguna', 'id');
+        return $this->belongsTo(User::class, 'id_user', 'id');
     }
 
     /**
@@ -40,5 +41,17 @@ class Absensi extends Model
     public function jadwalShift()
     {
         return $this->belongsTo(JadwalShift::class, 'id_jadwal', 'id_jadwal');
+    }
+
+    public function shift()
+    {
+        return $this->hasOneThrough(
+            Shift::class,
+            JadwalShift::class,
+            'id',        // Foreign key di JadwalShift (id_jadwal di Absensi mengarah ke id di JadwalShift)
+            'id',        // Primary key di Shift
+            'id_jadwal', // Foreign key di Absensi
+            'id_shift'   // Foreign key di JadwalShift
+        );
     }
 }

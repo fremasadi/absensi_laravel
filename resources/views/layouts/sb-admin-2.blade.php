@@ -38,6 +38,8 @@
         <!-- End Content Wrapper -->
     </div>
     <!-- End Wrapper -->
+    @yield('scripts') <!-- Ini adalah tempat untuk skrip yang ditulis di view -->
+
 
     <!-- SB Admin 2 Scripts -->
     <script src="{{ asset('sb-admin-2/vendor/jquery/jquery.min.js') }}"></script>

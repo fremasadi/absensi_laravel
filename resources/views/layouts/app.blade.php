@@ -32,5 +32,7 @@
                 {{ $slot }}
             </main>
         </div>
+        @yield('scripts') <!-- Ini adalah tempat untuk skrip yang ditulis di view -->
+
     </body>
 </html>

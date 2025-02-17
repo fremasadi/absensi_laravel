@@ -35,4 +35,10 @@ class JadwalShift extends Model
     {
         return $this->belongsTo(Shift::class, 'id_shift');
     }
+
+    // Relasi ke Absensi
+    public function absensi()
+    {
+        return $this->hasMany(Absensi::class, 'id_jadwal');
+    }
 }

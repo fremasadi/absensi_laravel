@@ -21,6 +21,19 @@ class ShiftResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'Shift';
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'Daftar Shift';
+    }
+
+
+    public static function getNavigationGroup(): ?string
+    {
+    return 'Manajemen Shift';
+    }
+
     public static function form(Form $form): Form
     {
         return $form
