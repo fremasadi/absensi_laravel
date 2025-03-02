@@ -11,6 +11,7 @@ class SettingGaji extends Model
 
     // Tentukan kolom mana yang dapat diisi massal
     protected $fillable = [
+        'name',
         'user_id',
         'gaji_per_jam',
         'periode_gaji',
@@ -43,12 +44,5 @@ class SettingGaji extends Model
         });
     }
 
-    public static function initialCreate(User $user)
-    {
-        return self::create([
-            'user_id' => $user->id,
-            'gaji_per_jam' => 10000, // Gaji default per jam
-            'periode_gaji' => 14 // Periode default 14 hari
-        ]);
-    }
+   
 }

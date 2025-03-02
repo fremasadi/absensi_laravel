@@ -1,12 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Facades\Artisan;
 use App\Models\JadwalShift;
 use App\Models\Absensi;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
-// Fungsi untuk melakukan pengecekan absensi
+// Fungsi untuk pengecekan absensi
 function checkMissingAttendance($output = null) {
     $today = Carbon::today();
     
@@ -23,29 +24,30 @@ function checkMissingAttendance($output = null) {
             ->first();
 
         if (!$absensi) {
-            Absensi::create([
-                'id_user' => $jadwal->id_user,
-                'id_jadwal' => $jadwal->id,
-                'tanggal_absen' => $today,
-                'waktu_masuk_time' => null,
-                'waktu_keluar_time' => null,
-                'durasi_hadir' => 0,
-                'status_kehadiran' => 'tidak hadir',
-                'keterangan' => 'tanpa keterangan',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ]);
+            Absensi::updateOrCreate(
+                ['id_user' => $jadwal->id_user, 'tanggal_absen' => $today],
+                [
+                    'id_jadwal' => $jadwal->id,
+                    'waktu_masuk_time' => null,
+                    'waktu_keluar_time' => null,
+                    'durasi_hadir' => 0,
+                    'status_kehadiran' => 'tidak hadir',
+                    'keterangan' => 'tanpa keterangan',
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now()
+                ]
+            );
 
             $message = "Created missing attendance record for user {$jadwal->user->name} on shift {$jadwal->shift->name}";
             Log::info($message);
             if ($output) {
                 $output->info($message);
             }
-        }
+        } 
         elseif ($absensi->waktu_masuk_time && !$absensi->waktu_keluar_time) {
             $shiftEnd = Carbon::parse($jadwal->shift->end_time);
             $waktuMasuk = Carbon::parse($absensi->waktu_masuk_time);
-            $durasiHadir = $waktuMasuk->diffInMinutes($shiftEnd);
+            $durasiHadir = max($waktuMasuk->diffInMinutes($shiftEnd), 0);
 
             $absensi->update([
                 'waktu_keluar_time' => $shiftEnd->toTimeString(),
@@ -63,16 +65,15 @@ function checkMissingAttendance($output = null) {
     }
 }
 
-// Mendaftarkan schedule untuk pengecekan otomatis setiap jam
+// **Mendaftarkan schedule untuk pengecekan otomatis setiap jam**
 Schedule::call(function() {
     checkMissingAttendance();
 })->hourly();
 
-// Mendaftarkan Artisan command untuk pengecekan manual
+// **Mendaftarkan Artisan command untuk pengecekan manual**
 Artisan::command('attendance:check-missing', function () {
     $this->info('Checking for missing attendance records...');
     
-    // Jalankan pengecekan dengan passing $this untuk output
     checkMissingAttendance($this);
     
     $this->info('Attendance check completed!');

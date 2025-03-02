@@ -11,10 +11,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Forms\Components\Placeholder;  // Ganti StaticText dengan Placeholder
-
-
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\Placeholder;  // Ganti StaticText dengan Placeholder
 
 class GajiResource extends Resource
 {
@@ -33,7 +31,6 @@ class GajiResource extends Resource
     {
     return 'Manajemen Gaji';
     }
-
     public static function form(Form $form): Form
     {
         return $form
@@ -83,8 +80,12 @@ class GajiResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
+                    ->label('Nama')
                     ->numeric()
                     ->sortable(),
+                // Tables\Columns\TextColumn::make('settingGaji.name')
+                //     ->numeric()
+                //     ->sortable(),
                 Tables\Columns\TextColumn::make('periode_awal')
                     ->date()
                     ->sortable(),

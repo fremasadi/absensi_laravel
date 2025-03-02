@@ -12,10 +12,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Models\User;
-use Filament\Forms\Components\Select;
-
-
 
 class SettingGajiResource extends Resource
 {
@@ -34,21 +30,14 @@ class SettingGajiResource extends Resource
     {
     return 'Manajemen Gaji';
     }
-
+    
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Select::make('user_id')
-                    ->label('Pilih User')
-                    ->options(
-                        User::where('role', 'user') // Filter hanya role 'user'
-                            ->pluck('name', 'id') // Ambil kolom 'name' sebagai label dan 'id' sebagai value
-                    )
+                Forms\Components\TextInput::make('name')
                     ->required()
-                    ->searchable() // Tambahkan fitur pencarian jika datanya banyak
-                    ->preload() // Preload data untuk performa yang lebih baik
-                    ->native(false),// Gunakan UI Select yang lebih modern
+                    ->maxLength(255),
                 Forms\Components\TextInput::make('gaji_per_jam')
                     ->required()
                     ->numeric()
@@ -64,9 +53,8 @@ class SettingGajiResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name') // Menampilkan nama user dari relasi
-                    ->label('Nama')
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('gaji_per_jam')
                     ->numeric()
                     ->sortable(),

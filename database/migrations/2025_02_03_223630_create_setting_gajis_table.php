@@ -11,19 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Schema::create('setting_gajis', function (Blueprint $table) {
-        //     $table->id(); // ID setting gaji (primary key)
-        //     $table->unsignedBigInteger('user_id'); // Foreign key ke tabel users
-        //     $table->decimal('gaji_per_jam', 10, 2)->default(10000.00); // Gaji per jam dengan default 10.000
-        //     $table->integer('periode_gaji')->default(14); // Periode gaji dalam hari (default 14 hari)
-        //     $table->timestamps(); // created_at dan updated_at
+        Schema::create('setting_gajis', function (Blueprint $table) {
+            $table->id(); // ID setting gaji (primary key)
+            $table->string('name');
+            $table->decimal('gaji_per_jam', 10, 2)->default(10000.00); // Gaji per jam dengan default 10.000
+            $table->integer('periode_gaji')->default(14); // Periode gaji dalam hari (default 14 hari)
+            $table->timestamps(); // created_at dan updated_at
         
-        //     // Foreign key constraint
-        //     $table->foreign('user_id')
-        //           ->references('id')
-        //           ->on('users')
-        //           ->onDelete('cascade');
-        // });
+            
+        });
         
     }
 
