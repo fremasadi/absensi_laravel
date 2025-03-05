@@ -14,7 +14,7 @@
             <span>Dashboard</span>
         </a>
         <a class="nav-link" href="{{ url('/barcode') }}">
-            
+
         <i class="fas fa-qrcode"></i>
             <span>Barcode Absensi</span>
         </a>
@@ -22,9 +22,9 @@
             <i class="fas fa-inbox"></i>
             <span>Riwayat Absensi</span>
         </a>
-        <a class="nav-link" href="{{ route('permintaan-izin.index') }}">
+        <!-- <a class="nav-link" href="{{ route('permintaan-izin.index') }}">
             <i class="fas fa-book"></i>
             <span>Permintaan Ijin</span>
-        </a>
+        </a> -->
     </li>
 </ul>
