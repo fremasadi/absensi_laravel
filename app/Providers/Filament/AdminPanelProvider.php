@@ -26,13 +26,13 @@ class AdminPanelProvider extends PanelProvider
         \Filament\Facades\Filament::registerNavigationGroups([
             \Filament\Navigation\NavigationGroup::make('Manajemen Absensi')
                 ->icon(null), // Hapus ikon dari grup
-    
+
             \Filament\Navigation\NavigationGroup::make('Manajemen Gaji')
                 ->icon(null), // Hapus ikon dari grup
-    
+
             \Filament\Navigation\NavigationGroup::make('Manajemen Shift')
                 ->icon(null), // Hapus ikon dari grup
-    
+
             \Filament\Navigation\NavigationGroup::make('Manajemen Pengguna')
                 ->icon(null), // Hapus ikon dari grup
         ]);
@@ -50,7 +50,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                // Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
