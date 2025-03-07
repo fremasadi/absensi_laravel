@@ -78,3 +78,93 @@ Artisan::command('attendance:check-missing', function () {
     
     $this->info('Attendance check completed!');
 })->purpose('Check and fill missing attendance records');
+
+
+// Command untuk generate gaji
+Artisan::command('salary:generate {user_id?}', function ($userId = null) {
+    if ($userId) {
+        // Generate untuk satu user
+        $user = \App\Models\User::find($userId);
+        if ($user) {
+            $this->generateSalaryForUser($user);
+            $this->info("Gaji berhasil dihitung untuk user {$user->name}");
+        } else {
+            $this->error("User tidak ditemukan");
+        }
+    } else {
+        // Generate untuk semua user aktif
+        $users = \App\Models\User::where('status', 'aktif')->get();
+        $count = 0;
+        
+        foreach ($users as $user) {
+            $this->generateSalaryForUser($user);
+            $count++;
+        }
+        
+        $this->info("Gaji berhasil dihitung untuk {$count} user");
+    }
+})->purpose('Generate salary for users');
+
+// Helper function untuk menghasilkan gaji
+function generateSalaryForUser($user) {
+    $now = Carbon::now();
+
+    // Ambil setting gaji default
+    $settingGaji = \App\Models\SettingGaji::first();
+    if (!$settingGaji) {
+        \Log::error('Data setting gaji tidak ditemukan.');
+        return;
+    }
+
+    // Tentukan periode gaji
+    $periodeGaji = $settingGaji->periode_gaji;
+    $periodeAwal = $now->copy()->subDays($periodeGaji);
+    $periodeAkhir = $now;
+
+    // Cek apakah ada data gaji yang periodenya belum berakhir untuk user ini
+    $gajiAktif = \App\Models\Gaji::where('user_id', $user->id)
+        ->where('periode_akhir', '>=', $periodeAwal->toDateString())
+        ->orderBy('periode_akhir', 'desc')
+        ->first();
+
+    // Hitung total jam kerja berdasarkan absensi dalam periode ini
+    $totalJamKerja = \App\Models\Absensi::where('id_user', $user->id)
+        ->whereBetween('tanggal_absen', [$periodeAwal->toDateString(), $periodeAkhir->toDateString()])
+        ->sum('durasi_hadir') / 60; // Konversi menit ke jam
+
+    // Hitung total gaji
+    $totalGaji = $totalJamKerja * $settingGaji->gaji_per_jam;
+
+    // Jika ada data gaji yang masih aktif (periode belum berakhir)
+    if ($gajiAktif) {
+        // Update data gaji yang ada jika setting berubah atau ada perubahan lain
+        if ($gajiAktif->setting_gaji_id != $settingGaji->id || 
+            $gajiAktif->total_jam_kerja != $totalJamKerja ||
+            $gajiAktif->total_gaji != $totalGaji) {
+            
+            $gajiAktif->update([
+                'setting_gaji_id' => $settingGaji->id,
+                'total_jam_kerja' => $totalJamKerja,
+                'total_gaji' => $totalGaji,
+                'updated_at' => $now
+            ]);
+            
+            \Log::info("Gaji diperbarui untuk user {$user->id} dengan total gaji Rp {$totalGaji}");
+        }
+    } else {
+        // Jika tidak ada gaji aktif atau periode sebelumnya sudah berakhir, buat data gaji baru
+        \App\Models\Gaji::create([
+            'user_id' => $user->id,
+            'setting_gaji_id' => $settingGaji->id,
+            'periode_awal' => $periodeAwal->toDateString(),
+            'periode_akhir' => $periodeAkhir->toDateString(),
+            'total_jam_kerja' => $totalJamKerja,
+            'total_gaji' => $totalGaji,
+            'status_pembayaran' => 'belum_dibayar',
+            'created_at' => $now,
+            'updated_at' => $now
+        ]);
+        
+        \Log::info("Gaji baru dibuat untuk user {$user->id} dengan total gaji Rp {$totalGaji}");
+    }
+}
