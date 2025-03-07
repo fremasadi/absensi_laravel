@@ -25,6 +25,8 @@ class EditSettingGaji extends EditRecord
         Artisan::call('salary:generate');
 
         // Tampilkan pesan sukses (opsional)
-        $this->notify('success', 'Salary data generated successfully!');
-    }
+        Notification::make()
+        ->title('Setting Gaji Berhasil Diubah')
+        ->success()
+        ->send();    }
 }
