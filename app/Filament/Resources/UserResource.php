@@ -40,7 +40,7 @@ public static function getNavigationGroup(): ?string
                     ->label('Role Pengguna')
                     ->options([
                         'admin' => 'Admin',
-                        'user' => 'User',
+                        'user' => 'Karyawan',
                     ])
                     ->required()
                     ->default('user'),
