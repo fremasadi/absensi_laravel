@@ -26,8 +26,7 @@ class EditSettingGaji extends EditRecord
 
         // Tampilkan pesan sukses (opsional)
         Notification::make()
-        ->title('Setting Gaji Berhasil Diubah')
-        ->subtitle('Dan Akan diterapkan periode berikutnya')
+        ->title('Setting Gaji Berhasil Diubah Dan Akan diterapkan periode berikutnya')
         ->success()
         ->send();    }
 }
