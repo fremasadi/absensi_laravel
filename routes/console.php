@@ -101,7 +101,6 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
             $periodeAwal = $now->copy()->subDays($periodeGaji);
 
             // Cek apakah ada data gaji yang masih aktif untuk user ini
-            // Perbaikan: Cek apakah data terakhir periodenya masih berlaku
             $gajiAktif = \App\Models\Gaji::where('user_id', $user->id)
                 ->orderBy('periode_akhir', 'desc')
                 ->first();
@@ -125,51 +124,44 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
                     // Hitung total gaji
                     $totalGaji = $totalJamKerja * $settingGaji->gaji_per_jam;
 
-                    // Update data gaji yang ada jika terjadi perubahan
-                    if ($gajiAktif->setting_gaji_id != $settingGaji->id || 
-                        $gajiAktif->total_jam_kerja != $totalJamKerja ||
-                        $gajiAktif->total_gaji != $totalGaji) {
-                        
-                        $gajiAktif->update([
-                            'setting_gaji_id' => $settingGaji->id,
-                            'total_jam_kerja' => $totalJamKerja,
-                            'total_gaji' => $totalGaji,
-                            'updated_at' => $now
-                        ]);
-                        
-                        $this->line("Gaji diperbarui untuk user {$user->id} dengan total gaji Rp {$totalGaji}");
-                        \Log::info("Gaji diperbarui untuk user {$user->id} dengan total gaji Rp {$totalGaji}");
-                    } else {
-                        $this->line("Tidak ada perubahan untuk gaji user {$user->id}");
-                    }
+                    // Update data gaji yang ada
+                    $gajiAktif->update([
+                        'setting_gaji_id' => $settingGaji->id,
+                        'total_jam_kerja' => $totalJamKerja,
+                        'total_gaji' => $totalGaji,
+                        'updated_at' => $now
+                    ]);
+                    
+                    $this->line("Gaji diperbarui untuk user {$user->id} dengan total gaji Rp {$totalGaji}");
+                    \Log::info("Gaji diperbarui untuk user {$user->id} dengan total gaji Rp {$totalGaji}");
                 }
             }
 
             // Jika periode sebelumnya sudah berakhir atau tidak ada data gaji sebelumnya
             if ($buatRecordBaru) {
-                // Hitung total jam kerja berdasarkan absensi dalam periode baru
+                // Reset dan hitung jam kerja berdasarkan absensi HANYA pada periode baru
                 $totalJamKerja = \App\Models\Absensi::where('id_user', $user->id)
                     ->whereBetween('tanggal_absen', [$periodeAwal->toDateString(), $periodeAkhir->toDateString()])
                     ->sum('durasi_hadir') / 60; // Konversi menit ke jam
 
-                // Hitung total gaji
+                // Hitung total gaji berdasarkan jam kerja baru
                 $totalGaji = $totalJamKerja * $settingGaji->gaji_per_jam;
 
-                // Buat data gaji baru
+                // Buat data gaji baru dengan nilai awal dari perhitungan pada periode baru
                 \App\Models\Gaji::create([
                     'user_id' => $user->id,
                     'setting_gaji_id' => $settingGaji->id,
                     'periode_awal' => $periodeAwal->toDateString(),
                     'periode_akhir' => $periodeAkhir->toDateString(),
-                    'total_jam_kerja' => $totalJamKerja,
-                    'total_gaji' => $totalGaji,
+                    'total_jam_kerja' => $totalJamKerja, // Nilai dari perhitungan periode baru
+                    'total_gaji' => $totalGaji, // Nilai dari perhitungan periode baru
                     'status_pembayaran' => 'belum_dibayar',
                     'created_at' => $now,
                     'updated_at' => $now
                 ]);
                 
-                $this->line("Gaji baru dibuat untuk user {$user->id} dengan total gaji Rp {$totalGaji}");
-                \Log::info("Gaji baru dibuat untuk user {$user->id} dengan total gaji Rp {$totalGaji}");
+                $this->line("Gaji baru dibuat untuk user {$user->id} dengan total jam: {$totalJamKerja}, total gaji: Rp {$totalGaji}");
+                \Log::info("Gaji baru dibuat untuk user {$user->id} dengan total jam: {$totalJamKerja}, total gaji: Rp {$totalGaji}");
             }
         };
 
