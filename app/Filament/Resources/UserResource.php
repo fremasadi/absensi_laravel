@@ -67,7 +67,8 @@ public static function getNavigationGroup(): ?string
                 Tables\Columns\TextColumn::make('email')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('role')
-                    ->searchable(),
+                    ->searchable()
+                    ->formatStateUsing(fn ($state) => $state === 'user' ? 'Karyawan' : ucfirst($state)),
                 Tables\Columns\ImageColumn::make('image'),
                 Tables\Columns\TextColumn::make('phone')
                     ->searchable(),
