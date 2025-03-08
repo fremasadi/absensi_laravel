@@ -13,7 +13,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Components\BarcodeScanner;
-
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\DateFilter;
 
 class AbsensiResource extends Resource
 {
@@ -50,51 +51,82 @@ class AbsensiResource extends Resource
     }
 
     public static function table(Table $table): Table
-    {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('user.name') // Mengambil nama dari relasi user
-                    ->label('Nama Karyawan')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('shift.name') // Ambil nama shift dari relasi shift
-                    ->label('Shift')
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('tanggal_absen')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('waktu_masuk_time'),
-                Tables\Columns\TextColumn::make('waktu_keluar_time'),
-                Tables\Columns\TextColumn::make('durasi_hadir')
-                    ->label('durasi hadir(Menit)')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('status_kehadiran')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('keterangan')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                //
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
-    }
+{
+    return $table
+        ->columns([
+            Tables\Columns\TextColumn::make('user.name')
+                ->label('Nama Karyawan')
+                ->sortable()
+                ->searchable(),
+            Tables\Columns\TextColumn::make('shift.name')
+                ->label('Shift')
+                ->sortable()
+                ->searchable(),
+            Tables\Columns\TextColumn::make('tanggal_absen')
+                ->date()
+                ->sortable(),
+            Tables\Columns\TextColumn::make('waktu_masuk_time'),
+            Tables\Columns\TextColumn::make('waktu_keluar_time'),
+            Tables\Columns\TextColumn::make('durasi_hadir')
+                ->label('Durasi Hadir (Menit)')
+                ->numeric()
+                ->sortable(),
+            Tables\Columns\TextColumn::make('status_kehadiran')
+                ->searchable(),
+            Tables\Columns\TextColumn::make('keterangan')
+                ->searchable(),
+        ])
+        ->filters([
+            DateFilter::make('tanggal_absen')
+                ->label('Filter Tanggal')
+                ->placeholder('Pilih tanggal'),
+            Filter::make('bulan')
+                ->label('Filter Bulan')
+                ->form([
+                    Forms\Components\Select::make('bulan')
+                        ->options([
+                            '1' => 'Januari',
+                            '2' => 'Februari',
+                            '3' => 'Maret',
+                            '4' => 'April',
+                            '5' => 'Mei',
+                            '6' => 'Juni',
+                            '7' => 'Juli',
+                            '8' => 'Agustus',
+                            '9' => 'September',
+                            '10' => 'Oktober',
+                            '11' => 'November',
+                            '12' => 'Desember',
+                        ])
+                        ->placeholder('Pilih Bulan'),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return $query->when($data['bulan'], function ($query, $bulan) {
+                        return $query->whereMonth('tanggal_absen', $bulan);
+                    });
+                }),
+            Filter::make('tahun')
+                ->label('Filter Tahun')
+                ->form([
+                    Forms\Components\TextInput::make('tahun')
+                        ->numeric()
+                        ->placeholder('Masukkan Tahun'),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return $query->when($data['tahun'], function ($query, $tahun) {
+                        return $query->whereYear('tanggal_absen', $tahun);
+                    });
+                }),
+        ])
+        ->actions([
+            Tables\Actions\EditAction::make(),
+        ])
+        ->bulkActions([
+            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\DeleteBulkAction::make(),
+            ]),
+        ]);
+}
 
     public static function getRelations(): array
     {
