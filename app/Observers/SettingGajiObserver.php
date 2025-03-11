@@ -1,5 +1,9 @@
 <?php
 
+
+
+// Tambahkan observer untuk SettingGaji
+// File: app/Observers/SettingGajiObserver.php
 namespace App\Observers;
 
 use App\Models\SettingGaji;
@@ -38,7 +42,7 @@ class SettingGajiObserver
                 // Perbarui periode akhir jika periode gaji berubah
                 if ($settingGaji->wasChanged('periode_gaji')) {
                     $periodeAwal = Carbon::parse($gaji->periode_awal)->startOfDay();
-                    $periodeAkhirBaru = $periodeAwal->copy()->addDays($settingGaji->periode_gaji - 1); // -1 karena hari awal termasuk
+                    $periodeAkhirBaru = $periodeAwal->copy()->addDays($settingGaji->periode_gaji - 1);
                     $gaji->periode_akhir = $periodeAkhirBaru->toDateString();
                 }
                 
