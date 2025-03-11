@@ -116,24 +116,40 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
                 if ($gajiPeriodeAkhir->startOfDay()->greaterThanOrEqualTo($now->copy()->startOfDay())) {
                     $buatRecordBaru = false;
                     
+                    // Periksa apakah setting gaji sudah berubah dari yang terakhir diaplikasikan
+                    $gajiSetting = \App\Models\SettingGaji::find($gajiAktif->setting_gaji_id);
+                    
+                    // Apakah periode gaji berubah? Jika ya, perpanjang periode akhir
+                    if ($gajiSetting && $gajiSetting->periode_gaji != $settingGaji->periode_gaji) {
+                        // Hitung periode akhir baru berdasarkan periode awal yang sama
+                        $periodeAwalAsli = Carbon::parse($gajiAktif->periode_awal);
+                        $periodeAkhirBaru = $periodeAwalAsli->copy()->addDays($settingGaji->periode_gaji);
+                        
+                        // Update periode akhir gaji
+                        $gajiAktif->periode_akhir = $periodeAkhirBaru->toDateString();
+                        
+                        $this->line("Periode akhir gaji untuk user {$user->id} diperpanjang hingga {$periodeAkhirBaru->format('Y-m-d')}");
+                        \Log::info("Periode akhir gaji untuk user {$user->id} diperpanjang hingga {$periodeAkhirBaru->format('Y-m-d')}");
+                    }
+                    
                     // Hitung total jam kerja berdasarkan absensi dalam periode ini
                     $totalJamKerja = \App\Models\Absensi::where('id_user', $user->id)
                         ->whereBetween('tanggal_absen', [$gajiAktif->periode_awal, $gajiAktif->periode_akhir])
                         ->sum('durasi_hadir') / 60; // Konversi menit ke jam
 
-                    // Hitung total gaji
+                    // Hitung total gaji dengan tarif terbaru
                     $totalGaji = $totalJamKerja * $settingGaji->gaji_per_jam;
 
                     // Update data gaji yang ada
                     $gajiAktif->update([
-                        'setting_gaji_id' => $settingGaji->id,
+                        'setting_gaji_id' => $settingGaji->id, // Update ke setting gaji terbaru
                         'total_jam_kerja' => $totalJamKerja,
                         'total_gaji' => $totalGaji,
                         'updated_at' => $now
                     ]);
                     
-                    $this->line("Gaji diperbarui untuk user {$user->id} dengan total gaji Rp {$totalGaji}");
-                    \Log::info("Gaji diperbarui untuk user {$user->id} dengan total gaji Rp {$totalGaji}");
+                    $this->line("Gaji diperbarui untuk user {$user->id} dengan total gaji Rp {$totalGaji} (tarif: Rp {$settingGaji->gaji_per_jam}/jam)");
+                    \Log::info("Gaji diperbarui untuk user {$user->id} dengan total gaji Rp {$totalGaji} (tarif: Rp {$settingGaji->gaji_per_jam}/jam)");
                 }
             }
 
@@ -211,3 +227,5 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
         \Log::error($e->getTraceAsString());
     }
 })->purpose('Generate salary for users');
+
+
