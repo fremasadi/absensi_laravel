@@ -97,8 +97,14 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
 
             // Tentukan periode gaji
             $periodeGaji = $settingGaji->periode_gaji;
-            $periodeAkhir = $now;
-            $periodeAwal = $now->copy()->subDays($periodeGaji);
+            
+            // Periode akhir = hari ini
+            $periodeAkhir = $now->copy()->startOfDay();
+            
+            // Periode awal = hari ini - periode gaji
+            $periodeAwal = $now->copy()->startOfDay()->subDays($periodeGaji - 1); // -1 karena hari ini termasuk
+
+            $this->line("Menghitung gaji untuk periode: {$periodeAwal->format('Y-m-d')} sampai {$periodeAkhir->format('Y-m-d')}");
 
             // Cek apakah ada data gaji yang masih aktif untuk user ini
             $gajiAktif = \App\Models\Gaji::where('user_id', $user->id)
@@ -110,10 +116,10 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
 
             // Jika ada data gaji sebelumnya
             if ($gajiAktif) {
-                $gajiPeriodeAkhir = Carbon::parse($gajiAktif->periode_akhir);
+                $gajiPeriodeAkhir = Carbon::parse($gajiAktif->periode_akhir)->startOfDay();
                 
                 // Jika periode terakhir belum berakhir (masih di hari yang sama atau lebih baru dari hari ini)
-                if ($gajiPeriodeAkhir->startOfDay()->greaterThanOrEqualTo($now->copy()->startOfDay())) {
+                if ($gajiPeriodeAkhir->greaterThanOrEqualTo($periodeAkhir)) {
                     $buatRecordBaru = false;
                     
                     // Periksa apakah setting gaji sudah berubah dari yang terakhir diaplikasikan
@@ -122,8 +128,8 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
                     // Apakah periode gaji berubah? Jika ya, perpanjang periode akhir
                     if ($gajiSetting && $gajiSetting->periode_gaji != $settingGaji->periode_gaji) {
                         // Hitung periode akhir baru berdasarkan periode awal yang sama
-                        $periodeAwalAsli = Carbon::parse($gajiAktif->periode_awal);
-                        $periodeAkhirBaru = $periodeAwalAsli->copy()->addDays($settingGaji->periode_gaji);
+                        $periodeAwalAsli = Carbon::parse($gajiAktif->periode_awal)->startOfDay();
+                        $periodeAkhirBaru = $periodeAwalAsli->copy()->addDays($settingGaji->periode_gaji - 1); // -1 karena hari awal termasuk
                         
                         // Update periode akhir gaji
                         $gajiAktif->periode_akhir = $periodeAkhirBaru->toDateString();
@@ -160,7 +166,7 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
                     'user_id' => $user->id,
                     'setting_gaji_id' => $settingGaji->id,
                     'periode_awal' => $periodeAwal->toDateString(),
-                    'periode_akhir' => $periodeAkhir->toDateString(),
+                    'periode_akhir' => $periodeAkhir->addDays($periodeGaji - 1)->toDateString(), // Periode akhir = periode awal + periode gaji - 1
                     'total_jam_kerja' => 0, // Mulai dengan 0
                     'total_gaji' => 0, // Mulai dengan 0
                     'status_pembayaran' => 'belum_dibayar',
@@ -168,12 +174,12 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
                     'updated_at' => $now
                 ])->id;
                 
-                $this->line("Gaji baru dibuat untuk user {$user->id} dengan total jam: 0, total gaji: Rp 0");
-                \Log::info("Gaji baru dibuat untuk user {$user->id} dengan total jam: 0, total gaji: Rp 0");
+                $this->line("Gaji baru dibuat untuk user {$user->id} dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
+                \Log::info("Gaji baru dibuat untuk user {$user->id} dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
                 
                 // Setelah membuat record dengan nilai 0, baru update nilainya jika ada absensi
                 $totalJamKerja = \App\Models\Absensi::where('id_user', $user->id)
-                    ->whereBetween('tanggal_absen', [$periodeAwal->toDateString(), $periodeAkhir->toDateString()])
+                    ->whereBetween('tanggal_absen', [$periodeAwal->copy()->subDays($periodeGaji - 1)->toDateString(), $periodeAkhir->toDateString()])
                     ->sum('durasi_hadir') / 60; // Konversi menit ke jam
                 
                 if ($totalJamKerja > 0) {
@@ -227,5 +233,3 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
         \Log::error($e->getTraceAsString());
     }
 })->purpose('Generate salary for users');
-
-

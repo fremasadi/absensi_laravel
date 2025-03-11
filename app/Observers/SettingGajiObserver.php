@@ -37,8 +37,8 @@ class SettingGajiObserver
                 
                 // Perbarui periode akhir jika periode gaji berubah
                 if ($settingGaji->wasChanged('periode_gaji')) {
-                    $periodeAwal = Carbon::parse($gaji->periode_awal);
-                    $periodeAkhirBaru = $periodeAwal->copy()->addDays($settingGaji->periode_gaji);
+                    $periodeAwal = Carbon::parse($gaji->periode_awal)->startOfDay();
+                    $periodeAkhirBaru = $periodeAwal->copy()->addDays($settingGaji->periode_gaji - 1); // -1 karena hari awal termasuk
                     $gaji->periode_akhir = $periodeAkhirBaru->toDateString();
                 }
                 
