@@ -40,12 +40,19 @@ class Absensi extends Model
      * Relasi ke model JadwalShift
      */
     public function jadwalShift()
-    {
-        return $this->belongsTo(JadwalShift::class, 'id_jadwal', 'id_jadwal');
-    }
-
-    public function shift()
 {
-    return $this->jadwalShift->shift;
+    return $this->belongsTo(JadwalShift::class, 'id_jadwal', 'id');
+}
+
+public function shift()
+{
+    return $this->hasOneThrough(
+        Shift::class,
+        JadwalShift::class,
+        'id',        // Foreign key di JadwalShift
+        'id',        // Primary key di Shift
+        'id_jadwal', // Foreign key di Absensi
+        'id_shift'   // Foreign key di JadwalShift yang menunjuk ke Shift
+    );
 }
 }

@@ -44,18 +44,20 @@ class AbsensiExport implements FromQuery, WithHeadings, WithMapping
     }
 
     public function map($absensi): array
-{
-    return [
-        $absensi->user->name ?? 'Tidak Diketahui',
-        $absensi->jadwalShift->shift->name ?? 'Tidak Ada Shift',
-        $absensi->jadwalShift->shift->start_time ?? '-',
-        $absensi->jadwalShift->shift->end_time ?? '-',
-        $absensi->tanggal_absen,
-        $absensi->waktu_masuk_time,
-        $absensi->waktu_keluar_time,
-        $absensi->durasi_hadir,
-        $absensi->status_kehadiran,
-        $absensi->keterangan,
-    ];
-}
+    {
+        $shift = $absensi->jadwalShift?->shift;
+        
+        return [
+            $absensi->user->name ?? 'Tidak Diketahui',
+            $shift?->name ?? 'Tidak Ada Shift',
+            $shift?->start_time ?? '-',
+            $shift?->end_time ?? '-',
+            $absensi->tanggal_absen,
+            $absensi->waktu_masuk_time,
+            $absensi->waktu_keluar_time,
+            $absensi->durasi_hadir,
+            $absensi->status_kehadiran,
+            $absensi->keterangan,
+        ];
+    }
 }
