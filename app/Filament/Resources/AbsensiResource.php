@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Components\BarcodeScanner;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Actions\Action;
 
 
 class AbsensiResource extends Resource
