@@ -44,7 +44,7 @@ class AbsensiExport implements FromQuery, WithHeadings, WithMapping
     {
         return [
             $absensi->user->name ?? 'Tidak Diketahui',  // Relasi ke User
-            $absensi->jadwal->name ?? 'Tidak Ada Jadwal',  // Relasi ke Jadwal
+            $absensi->jadwalShift?->name ?? 'Tidak Ada Jadwal',
             $absensi->tanggal_absen,
             $absensi->waktu_masuk_time,
             $absensi->waktu_keluar_time,
