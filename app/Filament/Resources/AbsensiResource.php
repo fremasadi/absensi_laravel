@@ -15,8 +15,9 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Components\BarcodeScanner;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Actions\ExportBulkAction;
-use Filament\Tables\Actions\ExportAction;
+use Filament\Tables\Actions\Action;
+use App\Exports\AbsensiExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AbsensiResource extends Resource
 {
@@ -87,6 +88,7 @@ class AbsensiResource extends Resource
                 ->toggleable(isToggledHiddenByDefault: true),
         ])
         ->filters([
+            // Filter tanggal kustom
             Filter::make('tanggal_absen')
                 ->form([
                     Forms\Components\DatePicker::make('dari_tanggal')
@@ -112,21 +114,10 @@ class AbsensiResource extends Resource
         ->bulkActions([
             Tables\Actions\BulkActionGroup::make([
                 Tables\Actions\DeleteBulkAction::make(),
-                ExportBulkAction::make() // Tambahkan export action
+                Action::make('export')
                     ->label('Unduh Excel')
-                    ->formats(['xlsx', 'csv']) // Format file yang didukung
-                    ->filename('absensi_karyawan') // Nama file
-                    ->defaultFormat('xlsx') // Format default
-                    ->withColumns([
-                        'user.name' => 'Nama Karyawan',
-                        'shift.name' => 'Shift',
-                        'tanggal_absen' => 'Tanggal Absen',
-                        'waktu_masuk_time' => 'Waktu Masuk',
-                        'waktu_keluar_time' => 'Waktu Keluar',
-                        'durasi_hadir' => 'Durasi Hadir (Menit)',
-                        'status_kehadiran' => 'Status Kehadiran',
-                        'keterangan' => 'Keterangan',
-                    ]),
+                    ->action(fn () => Excel::download(new AbsensiExport, 'absensi.xlsx'))
+                    ->icon('heroicon-o-download'),
             ]),
         ]);
 }
