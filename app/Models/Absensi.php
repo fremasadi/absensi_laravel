@@ -35,6 +35,12 @@ class Absensi extends Model
         return $this->belongsTo(User::class, 'id_user', 'id');
     }
 
+    public function jadwal()
+{
+    return $this->jadwalShift();
+}
+
+
     /**
      * Relasi ke model JadwalShift
      */
