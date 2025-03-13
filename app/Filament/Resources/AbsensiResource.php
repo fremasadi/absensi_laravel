@@ -110,15 +110,15 @@ class AbsensiResource extends Resource
         ])
         ->actions([
             Tables\Actions\EditAction::make(),
+            Action::make('export')
+                ->label('Unduh Excel')
+                ->icon('heroicon-o-arrow-down-tray') // Ubah ikon jika tidak ditemukan
+                ->action(fn () => Excel::download(new AbsensiExport, 'absensi.xlsx'))
         ])
         ->bulkActions([
             Tables\Actions\BulkActionGroup::make([
                 Tables\Actions\DeleteBulkAction::make(),
-                Action::make('export')
-                    ->label('Unduh Excel')
-                    ->action(fn () => Excel::download(new AbsensiExport, 'absensi.xlsx'))
-                    ->icon('heroicon-o-arrow-down-tray'),
-                ]),
+            ]),
         ]);
 }
 
