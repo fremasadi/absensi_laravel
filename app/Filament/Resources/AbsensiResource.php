@@ -117,8 +117,8 @@ class AbsensiResource extends Resource
                 Action::make('export')
                     ->label('Unduh Excel')
                     ->action(fn () => Excel::download(new AbsensiExport, 'absensi.xlsx'))
-                    ->icon('heroicon-o-download'),
-            ]),
+                    ->icon('heroicon-o-arrow-down-tray'),
+                ]),
         ]);
 }
 
