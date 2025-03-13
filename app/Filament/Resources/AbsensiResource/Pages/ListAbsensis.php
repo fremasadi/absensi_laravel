@@ -7,7 +7,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use App\Exports\AbsensiExport;
 use Maatwebsite\Excel\Facades\Excel;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action; // Ubah ini
 
 class ListAbsensis extends ListRecords
 {
