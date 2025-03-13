@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Exports;
 
 use App\Models\Absensi;
@@ -15,7 +14,7 @@ class AbsensiExport implements FromQuery, WithHeadings, WithMapping
     public function query()
     {
         return Absensi::query()
-            ->with(['user', 'jadwalShift.shift']) // Eager load relasi user dan jadwalShift.shift
+            ->with(['user', 'jadwalShift.shift'])
             ->select([
                 'id_user',
                 'id_jadwal',
@@ -31,8 +30,10 @@ class AbsensiExport implements FromQuery, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
-            'Nama Karyawan', 
-            'Nama Shift', // Kolom untuk nama shift
+            'Nama Karyawan',
+            'Nama Shift',
+            'Waktu Mulai Shift',
+            'Waktu Selesai Shift', 
             'Tanggal Absen',
             'Waktu Masuk',
             'Waktu Keluar',
@@ -45,8 +46,10 @@ class AbsensiExport implements FromQuery, WithHeadings, WithMapping
     public function map($absensi): array
     {
         return [
-            $absensi->user->name ?? 'Tidak Diketahui',  // Relasi ke User
-            $absensi->jadwalShift->shift->name ?? 'Tidak Ada Shift', // Relasi ke Shift melalui JadwalShift
+            $absensi->user->name ?? 'Tidak Diketahui',
+            $absensi->jadwalShift->shift->name ?? 'Tidak Ada Shift',
+            $absensi->jadwalShift->shift->start_time ?? '-',
+            $absensi->jadwalShift->shift->end_time ?? '-',
             $absensi->tanggal_absen,
             $absensi->waktu_masuk_time,
             $absensi->waktu_keluar_time,
