@@ -16,8 +16,7 @@ use App\Filament\Components\BarcodeScanner;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Actions\Action;
-use App\Exports\AbsensiExport;
-use Maatwebsite\Excel\Facades\Excel;
+
 
 class AbsensiResource extends Resource
 {
@@ -110,10 +109,7 @@ class AbsensiResource extends Resource
         ])
         ->actions([
             Tables\Actions\EditAction::make(),
-            Action::make('export')
-                ->label('Unduh Excel')
-                ->icon('heroicon-o-arrow-down-tray') // Ubah ikon jika tidak ditemukan
-                ->action(fn () => Excel::download(new AbsensiExport, 'absensi.xlsx'))
+            
         ])
         ->bulkActions([
             Tables\Actions\BulkActionGroup::make([
