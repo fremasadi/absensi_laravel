@@ -16,6 +16,7 @@ use App\Filament\Components\BarcodeScanner;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Actions\ExportBulkAction;
+use Filament\Tables\Actions\ExportAction;
 
 class AbsensiResource extends Resource
 {
@@ -111,13 +112,20 @@ class AbsensiResource extends Resource
         ->bulkActions([
             Tables\Actions\BulkActionGroup::make([
                 Tables\Actions\DeleteBulkAction::make(),
-                ExportBulkAction::make()
-                    ->label('Unduh Excel') // Label tombol unduh
-                    ->exports([
-                        ExportBulkAction::makeExport()
-                            ->format(\Maatwebsite\Excel\Excel::XLSX) // Format Excel
-                            ->filename('absensi_karyawan.xlsx') // Nama file
-                            ->fromTable(), // Mengambil data dari tabel
+                ExportBulkAction::make() // Tambahkan export action
+                    ->label('Unduh Excel')
+                    ->formats(['xlsx', 'csv']) // Format file yang didukung
+                    ->filename('absensi_karyawan') // Nama file
+                    ->defaultFormat('xlsx') // Format default
+                    ->withColumns([
+                        'user.name' => 'Nama Karyawan',
+                        'shift.name' => 'Shift',
+                        'tanggal_absen' => 'Tanggal Absen',
+                        'waktu_masuk_time' => 'Waktu Masuk',
+                        'waktu_keluar_time' => 'Waktu Keluar',
+                        'durasi_hadir' => 'Durasi Hadir (Menit)',
+                        'status_kehadiran' => 'Status Kehadiran',
+                        'keterangan' => 'Keterangan',
                     ]),
             ]),
         ]);
