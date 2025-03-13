@@ -45,14 +45,7 @@ class Absensi extends Model
     }
 
     public function shift()
-    {
-        return $this->hasOneThrough(
-            Shift::class,
-            JadwalShift::class,
-            'id',        // Foreign key di JadwalShift (id_jadwal di Absensi mengarah ke id di JadwalShift)
-            'id',        // Primary key di Shift
-            'id_jadwal', // Foreign key di Absensi
-            'id_shift'   // Foreign key di JadwalShift
-        );
-    }
+{
+    return $this->jadwalShift->shift;
+}
 }
