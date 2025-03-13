@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Components\BarcodeScanner;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Actions\ExportBulkAction;
 
 class AbsensiResource extends Resource
 {
@@ -85,7 +86,6 @@ class AbsensiResource extends Resource
                 ->toggleable(isToggledHiddenByDefault: true),
         ])
         ->filters([
-            // Filter tanggal kustom
             Filter::make('tanggal_absen')
                 ->form([
                     Forms\Components\DatePicker::make('dari_tanggal')
@@ -111,6 +111,14 @@ class AbsensiResource extends Resource
         ->bulkActions([
             Tables\Actions\BulkActionGroup::make([
                 Tables\Actions\DeleteBulkAction::make(),
+                ExportBulkAction::make()
+                    ->label('Unduh Excel') // Label tombol unduh
+                    ->exports([
+                        ExportBulkAction::makeExport()
+                            ->format(\Maatwebsite\Excel\Excel::XLSX) // Format Excel
+                            ->filename('absensi_karyawan.xlsx') // Nama file
+                            ->fromTable(), // Mengambil data dari tabel
+                    ]),
             ]),
         ]);
 }
