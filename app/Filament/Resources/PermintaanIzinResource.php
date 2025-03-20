@@ -42,9 +42,15 @@ class PermintaanIzinResource extends Resource
                     ->required(),
                 Forms\Components\DatePicker::make('tanggal_selesai')
                     ->required(),
-                Forms\Components\TextInput::make('jenis_izin')
-                    ->required()
-                    ->maxLength(255),
+                Forms\Components\Select::make('jenis_izin')
+                    ->label('Jenis Izin')
+                    ->options([
+                        'Sakit' => 'Sakit',
+                        'Cuti' => 'Cuti',
+                        'Keperluan Keluarga' => 'Keperluan Keluarga',
+                        'Lainnya' => 'Lainnya',
+                    ])
+                    ->required(),
                 Forms\Components\Textarea::make('alasan')
                     ->required()
                     ->columnSpanFull(),

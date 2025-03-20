@@ -37,6 +37,7 @@
                         <option value="Sakit">Sakit</option>
                         <option value="Cuti">Cuti</option>
                         <option value="Keperluan Keluarga">Keperluan Keluarga</option>
+                        <option value="Lainnya">Lainnya</option>
                     </select>
                     @error('jenis_izin')
                         <div class="invalid-feedback">{{ $message }}</div>
