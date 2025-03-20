@@ -25,7 +25,6 @@ class AbsensiController extends Controller
             return response()->json(['message' => 'Data barcode tidak valid.'], 400);
         }
 
-        // Cari jadwal shift aktif untuk user tersebut
         $jadwalShift = JadwalShift::where('id_user', $userId)
             ->where('id_shift', $shiftId)
             ->where('status', 1)
@@ -35,7 +34,6 @@ class AbsensiController extends Controller
             return response()->json(['message' => 'Jadwal shift tidak ditemukan.'], 400);
         }
 
-        // Validasi waktu scan sesuai dengan jadwal shift
         $shift = Shift::find($shiftId);
         if (!$shift) {
             return response()->json(['message' => 'Data shift tidak valid.'], 400);
