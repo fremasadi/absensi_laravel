@@ -17,7 +17,7 @@
         <form id="selfie-upload-form">
             <input type="hidden" name="absensi_id" id="absensi-id">
             <input type="hidden" name="selfie" id="selfie-image">
-            <button type="button" id="manual-capture" style="display: none;">Ambil Selfie Manual</button>
+            <button type="button" id="manual-capture" style="display: none;" class="btn btn-primary mt-2">Ambil Selfie Manual</button>
         </form>
     </div>
 
@@ -37,8 +37,49 @@
         #countdown {
             z-index: 1000;
         }
+        
+        /* Styling tambahan untuk tampilan yang lebih rapi */
+        #selfie-upload-section {
+            position: relative;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        #selfie-upload-section h2 {
+            color: #343a40;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        #selfie-camera {
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        #manual-capture {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        #manual-capture:hover {
+            background-color: #0069d9;
+        }
     </style>
 
+    <!-- SweetAlert2 library untuk dialog yang lebih menarik -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <!-- Script untuk scanner dan selfie -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
@@ -53,6 +94,18 @@
                 document.getElementById('barcode-result').value = decodedText;
                 scanner.clear();
 
+                // Tampilkan loading
+                Swal.fire({
+                    title: 'Memproses',
+                    text: 'Sedang memproses data absensi...',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
                 // Kirim data ke backend
                 fetch('/handle-scan', {
                     method: 'POST',
@@ -65,18 +118,47 @@
                     }),
                 }).then(response => response.json())
                   .then(data => {
+                      Swal.close(); // Tutup loading
+                      
                       // Jika absensi masuk berhasil, tampilkan form selfie
                       if (data.absensi_id) {
                           document.getElementById('absensi-id').value = data.absensi_id;
-                          document.getElementById('selfie-upload-section').style.display = 'block';
-                          startSelfieCamera();
+                          
+                          Swal.fire({
+                              title: 'Berhasil!',
+                              text: data.message,
+                              icon: 'success',
+                              timer: 2000,
+                              showConfirmButton: false
+                          }).then(() => {
+                              document.getElementById('selfie-upload-section').style.display = 'block';
+                              startSelfieCamera();
+                          });
                       } else {
-                          alert(data.message);
+                          Swal.fire({
+                              title: 'Informasi',
+                              text: data.message,
+                              icon: 'info',
+                              confirmButtonText: 'OK',
+                              confirmButtonColor: '#3085d6'
+                          }).then(() => {
+                              // Reinisialisasi scanner
+                              scanner.render();
+                          });
                       }
                   })
                   .catch(error => {
                       console.error('Error:', error);
-                      alert('Terjadi kesalahan saat memproses barcode');
+                      Swal.fire({
+                          title: 'Error!',
+                          text: 'Terjadi kesalahan saat memproses barcode',
+                          icon: 'error',
+                          confirmButtonText: 'Coba Lagi',
+                          confirmButtonColor: '#3085d6'
+                      }).then(() => {
+                          // Reinisialisasi scanner
+                          scanner.render();
+                      });
                   });
             });
 
@@ -120,7 +202,13 @@
                     })
                     .catch((err) => {
                         console.error('Error accessing camera:', err);
-                        alert('Gagal mengakses kamera. Pastikan kamera sudah diaktifkan dan izin diberikan.');
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Gagal mengakses kamera. Pastikan kamera sudah diaktifkan dan izin diberikan.',
+                            icon: 'error',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#3085d6'
+                        });
                     });
 
                 // Tombol untuk capture manual (cadangan jika auto tidak berfungsi)
@@ -144,6 +232,18 @@
                     // Gambar dari video ke canvas
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // Tampilkan loading
+                    Swal.fire({
+                        title: 'Mengupload',
+                        text: 'Sedang mengupload selfie...',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        willOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
                     
                     // Konversi canvas ke blob (untuk upload file)
                     canvas.toBlob(function(blob) {
@@ -174,20 +274,38 @@
                             document.getElementById('selfie-upload-section').style.display = 'none';
                             
                             // Tampilkan pesan sukses
-                            alert(data.message);
-                            
-                            // Reinisialisasi scanner
-                            scanner.render();
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: data.message,
+                                icon: 'success',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#3085d6'
+                            }).then(() => {
+                                // Reinisialisasi scanner
+                                scanner.render();
+                            });
                         })
                         .catch(error => {
                             console.error('Error uploading selfie:', error);
-                            alert('Gagal mengunggah selfie. Silakan coba lagi.');
+                            Swal.fire({
+                                title: 'Error!',
+                                text: 'Gagal mengunggah selfie. Silakan coba lagi.',
+                                icon: 'error',
+                                confirmButtonText: 'Coba Lagi',
+                                confirmButtonColor: '#3085d6'
+                            });
                             // Tampilkan tombol capture manual sebagai backup
                             document.getElementById('manual-capture').style.display = 'block';
                         });
                     }, 'image/jpeg', 0.8); // Format JPEG dengan kualitas 80%
                 } else {
-                    alert('Kamera belum siap. Silakan tunggu sebentar atau gunakan tombol manual.');
+                    Swal.fire({
+                        title: 'Perhatian',
+                        text: 'Kamera belum siap. Silakan tunggu sebentar atau gunakan tombol manual.',
+                        icon: 'warning',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#3085d6'
+                    });
                     document.getElementById('manual-capture').style.display = 'block';
                 }
             }
