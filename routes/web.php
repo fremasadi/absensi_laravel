@@ -10,7 +10,7 @@ use App\Http\Controllers\RiwayatAbsensiController;
 
 Route::get('/riwayat-absensi', [RiwayatAbsensiController::class, 'index'])->name('riwayat-absensi.index');
 Route::post('/handle-scan', [AbsensiController::class, 'handleScan']);
-
+Route::post('/upload-selfie', [AbsensiController::class, 'uploadSelfie']);
 Route::get('/', function () {
     return view('welcome');
 });
