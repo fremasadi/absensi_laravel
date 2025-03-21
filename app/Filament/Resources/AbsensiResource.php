@@ -23,7 +23,7 @@ class AbsensiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?string $navigationLabel = 'Absensi Karyawan';
+    protected static ?string $navigationLabel = 'Riwayat Absensi';
 
     public static function getModelLabel(): string
     {
@@ -40,7 +40,7 @@ class AbsensiResource extends Resource
     {
         return 'Manajemen Absensi';
     }
-   
+
 
     public static function form(Form $form): Form
     {
@@ -69,9 +69,12 @@ class AbsensiResource extends Resource
             Tables\Columns\TextColumn::make('waktu_masuk_time'),
             Tables\Columns\TextColumn::make('waktu_keluar_time'),
             Tables\Columns\TextColumn::make('durasi_hadir')
-                ->label('Durasi Hadir (Menit)')
+                ->label('Durasi Hadir (Jam)')
                 ->numeric()
-                ->sortable(),
+                ->sortable()
+                ->formatStateUsing(function ($state) {
+                    return $state / 60;
+                }),
             Tables\Columns\TextColumn::make('status_kehadiran')
                 ->searchable(),
             Tables\Columns\TextColumn::make('keterangan')
@@ -108,7 +111,7 @@ class AbsensiResource extends Resource
         ])
         ->actions([
             Tables\Actions\EditAction::make(),
-            
+
         ])
         ->bulkActions([
             Tables\Actions\BulkActionGroup::make([
