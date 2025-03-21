@@ -17,9 +17,15 @@ class BarcodeScannerPageResource extends Resource
 {
     protected static ?string $model = null; // Tidak perlu model karena tidak ada data yang disimpan
 
-    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    protected static ?string $navigationIcon = 'heroicon-o-camera';
 
     protected static ?string $navigationLabel = 'Scan Barcode'; // Label navigasi
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Manajemen Absensi';
+    }
+
 
 
     public static function form(Form $form): Form
