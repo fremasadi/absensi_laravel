@@ -1,6 +1,6 @@
 <div>
     <div id="barcode-scanner" style="width: 100%; height: 300px;"></div>
-    <input type="hidden" name="{{ $getName() }}" id="barcode-result">
+    <input type="hidden" name="barcode_result" id="barcode-result"> <!-- Ganti $getName() dengan nama field -->
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
