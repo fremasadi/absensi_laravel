@@ -63,18 +63,12 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
     
-        #selfie-upload-section {
-            position: relative;
-            width: 100%; /* Full width */
-            height: 300px; /* Sesuaikan dengan tinggi scanner barcode */
-            margin: 0; /* Pastikan margin 0 */
-            padding: 0; /* Pastikan padding 0 */
-            border-radius: 8px;
-            background-color: #f8f9fa;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden; /* Pastikan tidak ada konten yang meluber */
+        #selfie-upload-section h2 {
+            color: #343a40;
+            text-align: center;
+            margin-bottom: 15px;
         }
-
+    
         #selfie-camera {
             width: 100%; /* Full width */
             height: 100%; /* Full height */
