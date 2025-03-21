@@ -69,12 +69,13 @@ class AbsensiResource extends Resource
             Tables\Columns\TextColumn::make('waktu_masuk_time'),
             Tables\Columns\TextColumn::make('waktu_keluar_time'),
             Tables\Columns\TextColumn::make('durasi_hadir')
-                ->label('Durasi Hadir (Jam)')
-                ->numeric()
-                ->sortable()
-                ->formatStateUsing(function ($state) {
-                    return $state / 60;
-                }),
+            ->label('Durasi Hadir (Jam)')
+            ->numeric()
+            ->sortable()
+            ->formatStateUsing(function ($state) {
+                // Ubah durasi dari menit ke jam dan bulatkan ke 2 desimal
+                return round($state / 60, 2);
+            }),
             Tables\Columns\TextColumn::make('status_kehadiran')
                 ->searchable(),
             Tables\Columns\TextColumn::make('keterangan')
