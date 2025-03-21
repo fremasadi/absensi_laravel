@@ -8,8 +8,8 @@ use Carbon\Carbon;
 use App\Models\JadwalShift;
 use App\Models\Gaji;
 use App\Models\Shift;
-use App\Models\User; // Tambahkan ini
-
+use App\Models\User;
+use Illuminate\Support\Facades\Storage; // Untuk menyimpan file selfie
 
 class AbsensiController extends Controller
 {
@@ -54,7 +54,6 @@ class AbsensiController extends Controller
                 $shift->start_time . ' - ' . $shift->end_time
             ], 400);
         }
-        
 
         // Cari data absensi hari ini
         $absensi = Absensi::where('id_user', $userId)
@@ -115,9 +114,44 @@ class AbsensiController extends Controller
 
             return response()->json([
                 'message' => 'Absensi masuk berhasil dicatat.',
-                'waktu_masuk' => $now->format('H:i:s')
+                'waktu_masuk' => $now->format('H:i:s'),
+                'absensi_id' => $absensi->id // Kirim ID absensi untuk upload selfie
             ]);
         }
+    }
+
+    // Fungsi untuk menangani upload selfie
+    public function uploadSelfie(Request $request)
+    {
+        $request->validate([
+            'absensi_id' => 'required|exists:absensi,id',
+            'selfie' => 'required|image|mimes:jpeg,png,jpg|max:2048', // Batasan file: 2MB, format JPEG/PNG/JPG
+        ]);
+
+        $absensi = Absensi::find($request->absensi_id);
+
+        if (!$absensi) {
+            return response()->json(['message' => 'Data absensi tidak ditemukan.'], 404);
+        }
+
+        // Simpan file selfie
+        if ($request->hasFile('selfie')) {
+            $file = $request->file('selfie');
+            $fileName = 'selfie_' . time() . '.' . $file->getClientOriginalExtension();
+            $filePath = $file->storeAs('selfies', $fileName, 'public'); // Simpan di folder 'selfies'
+
+            // Update kolom imageselfie di tabel absensi
+            $absensi->update([
+                'imageselfie' => $filePath
+            ]);
+
+            return response()->json([
+                'message' => 'Selfie berhasil diupload.',
+                'file_path' => $filePath
+            ]);
+        }
+
+        return response()->json(['message' => 'Gagal mengupload selfie.'], 400);
     }
 
     // Helper function untuk memformat durasi
