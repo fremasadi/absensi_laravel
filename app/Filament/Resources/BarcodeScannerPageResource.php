@@ -17,7 +17,7 @@ class BarcodeScannerPageResource extends Resource
 {
     protected static ?string $model = null; // Tidak perlu model karena tidak ada data yang disimpan
 
-    protected static ?string $navigationIcon = 'heroicon-o-barcode'; // Icon untuk navigasi
+    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
     protected static ?string $navigationLabel = 'Scan Barcode'; // Label navigasi
 
