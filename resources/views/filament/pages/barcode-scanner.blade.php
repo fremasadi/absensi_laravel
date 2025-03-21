@@ -7,7 +7,6 @@
     <div id="selfie-upload-section" style="display: none;">
         <h2>Ambil Selfie</h2>
         <video id="selfie-camera" autoplay style="width: 100%; height: auto;"></video>
-        <button id="capture-selfie">Ambil Foto</button>
         <canvas id="selfie-canvas" style="display: none;"></canvas>
         <form id="selfie-upload-form">
             <input type="hidden" name="absensi_id" id="absensi-id">
@@ -70,31 +69,45 @@
                   });
             });
 
-            // Fungsi untuk memulai kamera selfie
+            // Fungsi untuk memulai kamera selfie dan auto capture setelah 3 detik
             function startSelfieCamera() {
                 const video = document.getElementById('selfie-camera');
                 const canvas = document.getElementById('selfie-canvas');
-                const captureButton = document.getElementById('capture-selfie');
                 const selfieImage = document.getElementById('selfie-image');
+                const countdownElement = document.getElementById('countdown');
+                const countdownTimer = document.getElementById('countdown-timer');
 
                 navigator.mediaDevices.getUserMedia({ video: true })
                     .then((stream) => {
                         video.srcObject = stream;
+                        countdownElement.style.display = 'block'; // Tampilkan countdown
+
+                        let count = 3;
+                        const countdownInterval = setInterval(() => {
+                            countdownTimer.textContent = count;
+                            count--;
+
+                            if (count < 0) {
+                                clearInterval(countdownInterval);
+                                countdownElement.style.display = 'none'; // Sembunyikan countdown
+
+                                // Ambil gambar setelah countdown selesai
+                                canvas.width = video.videoWidth;
+                                canvas.height = video.videoHeight;
+                                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                                // Konversi canvas ke data URL (format base64)
+                                const imageData = canvas.toDataURL('image/jpeg');
+                                selfieImage.value = imageData;
+
+                                // Otomatis submit form setelah capture
+                                document.getElementById('selfie-upload-form').submit();
+                            }
+                        }, 1000); // Update countdown setiap 1 detik
                     })
                     .catch((err) => {
                         console.error('Error accessing camera:', err);
                     });
-
-                // Tangkap foto dari kamera
-                captureButton.addEventListener('click', () => {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                    // Konversi canvas ke data URL (format base64)
-                    const imageData = canvas.toDataURL('image/jpeg');
-                    selfieImage.value = imageData;
-                });
 
                 // Kirim selfie ke backend
                 document.getElementById('selfie-upload-form').addEventListener('submit', (e) => {
@@ -109,9 +122,9 @@
                         },
                         body: formData,
                     }).then(response => response.json())
-                      .then(data => {
-                          alert(data.message);
-                      });
+                    .then(data => {
+                        alert(data.message);
+                    });
                 });
             }
         });
