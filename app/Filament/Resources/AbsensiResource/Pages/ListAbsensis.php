@@ -16,11 +16,11 @@ class ListAbsensis extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
-            Action::make('export')
-                ->label('Unduh Excel')
-                ->icon('heroicon-o-arrow-down-tray') // Ubah ikon jika tidak ditemukan
-                ->action(fn () => Excel::download(new AbsensiExport, 'absensi.xlsx'))
+            // Actions\CreateAction::make(),
+            // Action::make('export')
+            //     ->label('Unduh Excel')
+            //     ->icon('heroicon-o-arrow-down-tray') // Ubah ikon jika tidak ditemukan
+            //     ->action(fn () => Excel::download(new AbsensiExport, 'absensi.xlsx'))
         ];
     }
 }
