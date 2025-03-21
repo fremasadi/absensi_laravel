@@ -12,10 +12,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Components\BarcodeScanner;
-use Filament\Tables\Filters\Filter;
-use Filament\Tables\Filters\SelectFilter;
-
 
 class AbsensiResource extends Resource
 {
@@ -41,87 +37,101 @@ class AbsensiResource extends Resource
         return 'Manajemen Absensi';
     }
 
-
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                // BarcodeScanner::make('barcode')
-                // ->label('Scan Barcode'),
+                Forms\Components\TextInput::make('id_user')
+                    ->required()
+                    ->numeric(),
+                Forms\Components\TextInput::make('id_jadwal')
+                    ->numeric(),
+                Forms\Components\DatePicker::make('tanggal_absen'),
+                Forms\Components\TextInput::make('waktu_masuk_time'),
+                Forms\Components\TextInput::make('waktu_keluar_time'),
+                Forms\Components\TextInput::make('durasi_hadir')
+                    ->numeric(),
+                Forms\Components\TextInput::make('status_kehadiran')
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('keterangan')
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('imageselfie')
+                    ->maxLength(255),
             ]);
     }
 
-    public static function table(Table $table): Table
-{
-    return $table
-        ->columns([
-            Tables\Columns\TextColumn::make('user.name')
-                ->label('Nama Karyawan')
+     public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Nama Karyawan')
+                    ->sortable()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('shift.name')
+                    ->label('Shift')
+                    ->sortable()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('tanggal_absen')
+                    ->date()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('waktu_masuk_time'),
+                Tables\Columns\TextColumn::make('waktu_keluar_time'),
+                Tables\Columns\TextColumn::make('durasi_hadir')
+                ->label('Durasi Hadir (Jam)')
+                ->numeric()
                 ->sortable()
-                ->searchable(),
-            Tables\Columns\TextColumn::make('shift.name')
-                ->label('Shift')
-                ->sortable()
-                ->searchable(),
-            Tables\Columns\TextColumn::make('tanggal_absen')
-                ->date()
-                ->sortable(),
-            Tables\Columns\TextColumn::make('waktu_masuk_time'),
-            Tables\Columns\TextColumn::make('waktu_keluar_time'),
-            Tables\Columns\TextColumn::make('durasi_hadir')
-            ->label('Durasi Hadir (Jam)')
-            ->numeric()
-            ->sortable()
-            ->formatStateUsing(function ($state) {
-                // Ubah durasi dari menit ke jam dan bulatkan ke 2 desimal
-                return round($state / 60, 2);
-            }),
-            Tables\Columns\TextColumn::make('status_kehadiran')
-                ->searchable(),
-            Tables\Columns\TextColumn::make('keterangan')
-                ->searchable(),
-            Tables\Columns\ImageColumn::make('imageselfie')
-                ->searchable(),    
-            Tables\Columns\TextColumn::make('created_at')
-                ->dateTime()
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-            Tables\Columns\TextColumn::make('updated_at')
-                ->dateTime()
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-        ])
-        ->filters([
-            // Filter tanggal kustom
-            Filter::make('tanggal_absen')
-                ->form([
-                    Forms\Components\DatePicker::make('dari_tanggal')
-                        ->label('Dari Tanggal'),
-                    Forms\Components\DatePicker::make('sampai_tanggal')
-                        ->label('Sampai Tanggal'),
-                ])
-                ->query(function (Builder $query, array $data): Builder {
-                    return $query
-                        ->when(
-                            $data['dari_tanggal'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('tanggal_absen', '>=', $date),
-                        )
-                        ->when(
-                            $data['sampai_tanggal'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('tanggal_absen', '<=', $date),
-                        );
+                ->formatStateUsing(function ($state) {
+                    // Ubah durasi dari menit ke jam dan bulatkan ke 2 desimal
+                    return round($state / 60, 2);
                 }),
-        ])
-        ->actions([
-            // Tables\Actions\EditAction::make(),
+                Tables\Columns\TextColumn::make('status_kehadiran')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('keterangan')
+                    ->searchable(),
+                Tables\Columns\ImageColumn::make('imageselfie')
+                    ->searchable(),    
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                // Filter tanggal kustom
+                Filter::make('tanggal_absen')
+                    ->form([
+                        Forms\Components\DatePicker::make('dari_tanggal')
+                            ->label('Dari Tanggal'),
+                        Forms\Components\DatePicker::make('sampai_tanggal')
+                            ->label('Sampai Tanggal'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['dari_tanggal'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('tanggal_absen', '>=', $date),
+                            )
+                            ->when(
+                                $data['sampai_tanggal'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('tanggal_absen', '<=', $date),
+                            );
+                    }),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
 
-        ])
-        ->bulkActions([
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]),
-        ]);
-}
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
 
     public static function getRelations(): array
     {
