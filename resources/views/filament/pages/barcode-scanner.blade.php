@@ -1,20 +1,21 @@
-<div id="scanner-container">
+<div>
     <!-- Scanner -->
     <div id="barcode-scanner" style="width: 100%; height: 300px;"></div>
     <input type="hidden" name="barcode_result" id="barcode-result">
 
     <!-- Tombol "Mulai" -->
-    <button id="start-scan-button">Mulai Scan</button>
+    <button id="start-scan-button" style="display: none;">Mulai Scan</button>
 
-    <!-- CSS untuk menengahkan tombol dan menyembunyikan "Scan an Image File" -->
+    <!-- CSS untuk menyembunyikan "Scan an Image File" -->
     <style>
-        /* Container untuk menengahkan tombol */
-        #scanner-container {
-            display: flex;
-            justify-content: center; /* Menengahkan secara horizontal */
-            align-items: center; /* Menengahkan secara vertikal */
-            height: 100vh; /* Gunakan tinggi layar penuh */
-            flex-direction: column; /* Susun elemen secara vertikal */
+        /* Sembunyikan tombol "Scan an Image File" */
+        #html5-qrcode-select-camera + label[for="html5-qrcode-button-file-selection"] {
+            display: none;
+        }
+
+        /* Sembunyikan input file */
+        #html5-qrcode-button-file-selection {
+            display: none;
         }
 
         /* Gaya untuk tombol "Mulai" */
@@ -35,11 +36,6 @@
 
         /* Sembunyikan tombol "Scan an Image File" */
         #html5-qrcode-select-camera + label[for="html5-qrcode-button-file-selection"] {
-            display: none;
-        }
-
-        /* Sembunyikan input file */
-        #html5-qrcode-button-file-selection {
             display: none;
         }
     </style>
