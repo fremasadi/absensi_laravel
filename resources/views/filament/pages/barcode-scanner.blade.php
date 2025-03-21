@@ -3,12 +3,26 @@
     <input type="hidden" name="barcode_result" id="barcode-result"> <!-- Ganti $getName() dengan nama field -->
 </div>
 
+<!-- CSS untuk menyembunyikan "Scan an Image File" -->
+<style>
+    /* Sembunyikan tombol "Scan an Image File" */
+    #html5-qrcode-select-camera + label[for="html5-qrcode-button-file-selection"] {
+        display: none;
+    }
+
+    /* Sembunyikan input file */
+    #html5-qrcode-button-file-selection {
+        display: none;
+    }
+</style>
+
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const scanner = new Html5QrcodeScanner("barcode-scanner", {
             fps: 10,
-            qrbox: 250
+            qrbox: 250,
+            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA] // Hanya izinkan scan dari kamera
         });
 
         scanner.render((decodedText) => {
