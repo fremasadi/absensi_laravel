@@ -80,7 +80,6 @@ Artisan::command('attendance:check-missing', function () {
 })->purpose('Check and fill missing attendance records');
 
 
-// Command untuk generate gaji
 Artisan::command('salary:generate {user_id?}', function ($userId = null) {
     try {
         // Tentukan fungsi helper di dalam scope command
@@ -130,9 +129,12 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
                     }
                     
                     // Hitung total jam kerja berdasarkan absensi dalam periode ini
-                    $totalJamKerja = \App\Models\Absensi::where('id_user', $user->id)
+                    $totalMenitKerja = \App\Models\Absensi::where('id_user', $user->id)
                         ->whereBetween('tanggal_absen', [$gajiSebelumnya->periode_awal, $gajiSebelumnya->periode_akhir])
-                        ->sum('durasi_hadir') / 60; // Konversi menit ke jam
+                        ->sum('durasi_hadir');
+
+                    // Konversi menit ke jam dengan format desimal (misalnya, 10 menit = 0.17 jam)
+                    $totalJamKerja = round($totalMenitKerja / 60, 2); // Dibulatkan ke 2 angka desimal
 
                     // Hitung total gaji dengan tarif terbaru
                     $totalGaji = $totalJamKerja * $settingGaji->gaji_per_jam;
@@ -173,9 +175,12 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
                     \Log::info("Gaji baru dibuat untuk user {$user->id} dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
                     
                     // Setelah membuat record dengan nilai 0, baru update nilainya jika ada absensi
-                    $totalJamKerja = \App\Models\Absensi::where('id_user', $user->id)
+                    $totalMenitKerja = \App\Models\Absensi::where('id_user', $user->id)
                         ->whereBetween('tanggal_absen', [$periodeAwal->toDateString(), $periodeAkhir->toDateString()])
-                        ->sum('durasi_hadir') / 60; // Konversi menit ke jam
+                        ->sum('durasi_hadir');
+
+                    // Konversi menit ke jam dengan format desimal
+                    $totalJamKerja = round($totalMenitKerja / 60, 2); // Dibulatkan ke 2 angka desimal
                     
                     if ($totalJamKerja > 0) {
                         // Hitung total gaji berdasarkan jam kerja
@@ -221,9 +226,12 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
                 \Log::info("Gaji pertama dibuat untuk user {$user->id} dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
                 
                 // Setelah membuat record dengan nilai 0, baru update nilainya jika ada absensi
-                $totalJamKerja = \App\Models\Absensi::where('id_user', $user->id)
+                $totalMenitKerja = \App\Models\Absensi::where('id_user', $user->id)
                     ->whereBetween('tanggal_absen', [$periodeAwal->toDateString(), $periodeAkhir->toDateString()])
-                    ->sum('durasi_hadir') / 60; // Konversi menit ke jam
+                    ->sum('durasi_hadir');
+
+                // Konversi menit ke jam dengan format desimal
+                $totalJamKerja = round($totalMenitKerja / 60, 2); // Dibulatkan ke 2 angka desimal
                 
                 if ($totalJamKerja > 0) {
                     // Hitung total gaji berdasarkan jam kerja
