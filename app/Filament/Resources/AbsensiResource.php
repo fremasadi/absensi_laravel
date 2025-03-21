@@ -80,7 +80,7 @@ class AbsensiResource extends Resource
                 ->searchable(),
             Tables\Columns\TextColumn::make('keterangan')
                 ->searchable(),
-            Tables\Columns\TextColumn::make('imageselfie')
+            Tables\Columns\ImageColumn::make('imageselfie')
                 ->searchable(),    
             Tables\Columns\TextColumn::make('created_at')
                 ->dateTime()
