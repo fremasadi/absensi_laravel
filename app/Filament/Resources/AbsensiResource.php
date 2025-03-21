@@ -46,8 +46,8 @@ class AbsensiResource extends Resource
     {
         return $form
             ->schema([
-                BarcodeScanner::make('barcode')
-                ->label('Scan Barcode'),
+                // BarcodeScanner::make('barcode')
+                // ->label('Scan Barcode'),
             ]);
     }
 
@@ -118,7 +118,7 @@ class AbsensiResource extends Resource
         ])
         ->bulkActions([
             Tables\Actions\BulkActionGroup::make([
-                // Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\DeleteBulkAction::make(),
             ]),
         ]);
 }
