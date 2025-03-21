@@ -11,7 +11,7 @@ class ManageBarcodeScannerPages extends Page
 {
     protected static string $resource = BarcodeScannerPageResource::class;
 
-    protected static string $view = 'filament.resources.barcode-scanner-page-resource.pages.manage-barcode-scanner-pages';
+    protected static string $view = 'filament.components.scan-qr-code'; // Sesuaikan dengan path view Anda
 
     protected function getHeaderActions(): array
     {
