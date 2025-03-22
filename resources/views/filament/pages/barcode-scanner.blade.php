@@ -1,18 +1,26 @@
 <div>
-    <!-- Root element tunggal -->
-    <div id="barcode-scanner" style="width: 100%; height: 300px;"></div>
-    <input type="hidden" name="barcode_result" id="barcode-result">
-    
-    <div class="mt-4">
+    <!-- Root Element Tunggal -->
+    <div wire:ignore>
+        <!-- Barcode Scanner -->
+        <div id="barcode-scanner" style="width: 100%; height: 300px;"></div>
+        <input type="hidden" name="barcode_result" id="barcode-result">
+    </div>
+
+    <!-- Kamera dan Selfie -->
+    <div wire:ignore class="mt-4">
         <h3 class="text-lg font-medium">Ambil Selfie</h3>
+
         <div id="camera-container" class="my-2" style="width: 320px; height: 240px; border: 1px solid #ccc; display: none; position: relative;">
             <video id="camera-view" width="100%" height="100%" autoplay></video>
             <div id="countdown" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; color: white; text-shadow: 2px 2px 4px #000; display: none;">3</div>
             <canvas id="camera-canvas" style="display:none;"></canvas>
         </div>
+
         <div id="selfie-preview" class="my-2" style="width: 320px; height: 240px; border: 1px solid #ccc; display: none;">
             <img id="selfie-image" width="100%" height="100%">
         </div>
+
+        <!-- Tombol-tombol -->
         <div class="mt-2">
             <button type="button" id="start-camera" class="px-4 py-2 bg-blue-500 text-white rounded" style="display: none;">Buka Kamera</button>
             <button type="button" id="capture-photo" class="px-4 py-2 bg-green-500 text-white rounded" style="display: none;">Ambil Foto</button>
@@ -21,6 +29,7 @@
         </div>
     </div>
 </div>
+
 
 <style>
     /* General styling */
