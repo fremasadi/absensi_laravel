@@ -9,6 +9,7 @@ use App\Models\JadwalShift;
 use App\Models\Gaji;
 use App\Models\Shift;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 
 class AbsensiController extends Controller
@@ -61,9 +62,11 @@ class AbsensiController extends Controller
             ], 400);
         }
 
-        // Proses menyimpan file selfie
+        // Proses menyimpan file selfie langsung ke storage/app
         $selfieFileName = 'selfie_' . $userId . '_' . $now->format('Ymd_His') . '.' . $selfieImage->getClientOriginalExtension();
-        $selfiePath = $selfieImage->storeAs('', $selfieFileName); // Simpan langsung di storage/app
+        
+        // Simpan file ke storage/app/selfies (bukan di public)
+        $selfiePath = $selfieImage->storeAs('selfies', $selfieFileName);
         
         // Cari data absensi hari ini
         $absensi = Absensi::where('id_user', $userId)
@@ -87,7 +90,7 @@ class AbsensiController extends Controller
             $absensi->update([
                 'waktu_keluar_time' => $waktuKeluar->toTimeString(),
                 'durasi_hadir' => $durasiHadir,
-                'selfiekeluar' => $selfieUrl,
+                'selfiekeluar' => $selfiePath, // Path relatif ke storage/app
                 'updated_at' => $now
             ]);
 
@@ -108,7 +111,7 @@ class AbsensiController extends Controller
                 'message' => 'Absensi keluar berhasil dicatat.',
                 'waktu_keluar' => $waktuKeluar->format('H:i:s'),
                 'durasi_hadir' => $this->formatDurasi($durasiHadir),
-                'selfie_keluar' => $selfieUrl
+                'selfie_path' => $selfiePath
             ]);
         } else {
             // Buat absensi baru untuk waktu masuk
@@ -120,7 +123,7 @@ class AbsensiController extends Controller
                 'durasi_hadir' => 0, // Durasi awal 0 karena baru masuk
                 'status_kehadiran' => 'hadir',
                 'keterangan' => 'hadir',
-                'selfiemasuk' => $selfieUrl,
+                'selfiemasuk' => $selfiePath, // Path relatif ke storage/app
                 'created_at' => $now,
                 'updated_at' => $now
             ]);
@@ -128,7 +131,7 @@ class AbsensiController extends Controller
             return response()->json([
                 'message' => 'Absensi masuk berhasil dicatat.',
                 'waktu_masuk' => $now->format('H:i:s'),
-                'selfie_masuk' => $selfieUrl
+                'selfie_path' => $selfiePath
             ]);
         }
     }
