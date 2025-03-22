@@ -63,8 +63,7 @@ class AbsensiController extends Controller
 
         // Proses menyimpan file selfie
         $selfieFileName = 'selfie_' . $userId . '_' . $now->format('Ymd_His') . '.' . $selfieImage->getClientOriginalExtension();
-        $selfiePath = $selfieImage->storeAs('public/selfies', $selfieFileName);
-        $selfieUrl = str_replace('public/', 'storage/', $selfiePath);
+        $selfiePath = $selfieImage->storeAs('', $selfieFileName); // Simpan langsung di storage/app
         
         // Cari data absensi hari ini
         $absensi = Absensi::where('id_user', $userId)
