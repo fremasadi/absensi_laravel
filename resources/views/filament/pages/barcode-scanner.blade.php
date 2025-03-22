@@ -1,4 +1,5 @@
 <div>
+    <!-- Root element tunggal -->
     <div id="barcode-scanner" style="width: 100%; height: 300px;"></div>
     <input type="hidden" name="barcode_result" id="barcode-result">
     
