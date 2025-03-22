@@ -1,4 +1,4 @@
-<div>
+<div id="scanner-container">
     <div id="barcode-scanner" style="width: 100%; height: 100vh;"></div>
     <input type="hidden" name="barcode_result" id="barcode-result">
     
@@ -12,231 +12,251 @@
             <img id="selfie-image" width="100%" height="100%">
         </div>
     </div>
-</div>
 
-<!-- SweetAlert2 CSS dan JS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Barcode scanner setup dengan lebar dan tinggi penuh
-        const scanner = new Html5QrcodeScanner("barcode-scanner", {
-            fps: 10,
-            qrbox: { width: 300, height: 300 },
-            aspectRatio: window.innerWidth / window.innerHeight,
-            disableFlip: false
-        });
-
-        let barcodeData = null;
-        let selfieBlob = null;
-        let stream = null;
-
-        // Camera elements
-        const cameraContainer = document.getElementById('camera-container');
-        const cameraView = document.getElementById('camera-view');
-        const cameraCanvas = document.getElementById('camera-canvas');
-        const selfiePreview = document.getElementById('selfie-preview');
-        const selfieImage = document.getElementById('selfie-image');
-        const countdownElement = document.getElementById('countdown');
-
-        // Barcode scan handler
-        scanner.render((decodedText) => {
-            document.getElementById('barcode-result').value = decodedText;
-            scanner.clear();
-            barcodeData = decodedText;
-            
-            // Tampilkan SweetAlert untuk memberi tahu pengguna
-            Swal.fire({
-                title: 'QR Code Terdeteksi!',
-                text: 'Menyiapkan kamera untuk selfie...',
-                icon: 'success',
-                timer: 2000,
-                timerProgressBar: true,
-                showConfirmButton: false
-            }).then(() => {
-                // Hide scanner after successful scan
-                const scannerElement = document.getElementById('barcode-scanner');
-                scannerElement.style.display = 'none';
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Pastikan SweetAlert2 dan html5-qrcode sudah dimuat
+            if (typeof Swal === 'undefined') {
+                // Tambahkan SweetAlert2 jika belum dimuat
+                const sweetAlertCss = document.createElement('link');
+                sweetAlertCss.rel = 'stylesheet';
+                sweetAlertCss.href = 'https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.css';
+                document.head.appendChild(sweetAlertCss);
                 
-                // Start camera automatically
-                startCamera();
-            });
-        });
-
-        // Start camera function
-        async function startCamera() {
-            try {
-                // Langsung meminta izin kamera (tanpa perlu scan image)
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "user" } 
-                });
-                cameraView.srcObject = stream;
-                cameraContainer.style.display = 'block';
-                
-                // Tampilkan SweetAlert untuk instruksi
-                Swal.fire({
-                    title: 'Kamera Siap',
-                    text: 'Harap tunggu 3 detik untuk foto otomatis...',
-                    icon: 'info',
-                    timer: 1000,
-                    showConfirmButton: false,
-                    timerProgressBar: true
-                }).then(() => {
-                    // Start countdown after camera is ready
-                    startCountdown();
-                });
-            } catch (err) {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Gagal mengakses kamera: ' + err,
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
+                const sweetAlertScript = document.createElement('script');
+                sweetAlertScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.js';
+                document.head.appendChild(sweetAlertScript);
             }
-        }
-
-        // Countdown function
-        function startCountdown() {
-            countdownElement.style.display = 'block';
-            let count = 3;
-            countdownElement.textContent = count;
             
-            const countInterval = setInterval(() => {
-                count--;
-                countdownElement.textContent = count;
-                
-                if (count <= 0) {
-                    clearInterval(countInterval);
-                    countdownElement.style.display = 'none';
-                    capturePhoto();
-                }
-            }, 1000);
-        }
-
-        // Capture photo function
-        function capturePhoto() {
-            const context = cameraCanvas.getContext('2d');
-            cameraCanvas.width = cameraView.videoWidth;
-            cameraCanvas.height = cameraView.videoHeight;
-            context.drawImage(cameraView, 0, 0, cameraCanvas.width, cameraCanvas.height);
+            if (typeof Html5QrcodeScanner === 'undefined') {
+                // Tambahkan html5-qrcode jika belum dimuat
+                const qrCodeScript = document.createElement('script');
+                qrCodeScript.src = 'https://unpkg.com/html5-qrcode';
+                qrCodeScript.onload = initScanner;
+                document.head.appendChild(qrCodeScript);
+            } else {
+                initScanner();
+            }
             
-            // Convert canvas to blob/file
-            cameraCanvas.toBlob((blob) => {
-                selfieBlob = blob;
-                const imageUrl = URL.createObjectURL(blob);
-                selfieImage.src = imageUrl;
-                
-                // Show preview and hide camera
-                selfiePreview.style.display = 'block';
-                cameraContainer.style.display = 'none';
-                
-                // Tampilkan SweetAlert untuk konfirmasi selfie
-                Swal.fire({
-                    title: 'Selfie Diambil',
-                    text: 'Apakah Anda ingin menggunakan selfie ini?',
-                    imageUrl: imageUrl,
-                    imageWidth: 300,
-                    imageHeight: 225,
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, Kirim',
-                    cancelButtonText: 'Ambil Ulang',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // If user confirmed, submit data
-                        submitData();
-                    } else {
-                        // If user wants to retake
-                        selfiePreview.style.display = 'none';
-                        startCamera();
-                    }
+            function initScanner() {
+                // Barcode scanner setup dengan lebar dan tinggi penuh
+                const scanner = new Html5QrcodeScanner("barcode-scanner", {
+                    fps: 10,
+                    qrbox: { width: 300, height: 300 },
+                    aspectRatio: window.innerWidth / window.innerHeight,
+                    disableFlip: false
                 });
-            }, 'image/jpeg', 0.8);
-        }
 
-        // Function to submit data to server
-        function submitData() {
-            Swal.fire({
-                title: 'Sedang Mengirim...',
-                text: 'Mohon tunggu sebentar',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-            
-            const formData = new FormData();
-            formData.append('barcode', barcodeData);
-            formData.append('selfie', selfieBlob, 'selfie.jpg');
-            formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-            
-            // Parse data barcode for additional info
-            const [userId, idJadwal, scanTime] = barcodeData.split('|');
-            formData.append('id_jadwal', idJadwal);
+                let barcodeData = null;
+                let selfieBlob = null;
+                let stream = null;
 
-            // Submit the data
-            fetch('/handle-scan', {
-                method: 'POST',
-                body: formData,
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Show success message with SweetAlert
-                Swal.fire({
-                    title: 'Berhasil!',
-                    text: data.message,
-                    icon: 'success',
-                    confirmButtonText: 'OK'
-                }).then(() => {
-                    // Reset UI
-                    selfiePreview.style.display = 'none';
+                // Camera elements
+                const cameraContainer = document.getElementById('camera-container');
+                const cameraView = document.getElementById('camera-view');
+                const cameraCanvas = document.getElementById('camera-canvas');
+                const selfiePreview = document.getElementById('selfie-preview');
+                const selfieImage = document.getElementById('selfie-image');
+                const countdownElement = document.getElementById('countdown');
+
+                // Barcode scan handler
+                scanner.render((decodedText) => {
+                    document.getElementById('barcode-result').value = decodedText;
+                    scanner.clear();
+                    barcodeData = decodedText;
                     
-                    // Stop camera stream
-                    if (stream) {
-                        stream.getTracks().forEach(track => track.stop());
-                    }
-                    
-                    // Reset data
-                    barcodeData = null;
-                    selfieBlob = null;
-                    
-                    // Show scanner again
-                    const scannerElement = document.getElementById('barcode-scanner');
-                    scannerElement.style.display = 'block';
-                    
-                    // Restart scanner
-                    scanner.render((decodedText) => {
-                        document.getElementById('barcode-result').value = decodedText;
-                        scanner.clear();
-                        barcodeData = decodedText;
+                    // Tampilkan SweetAlert untuk memberi tahu pengguna
+                    Swal.fire({
+                        title: 'QR Code Terdeteksi!',
+                        text: 'Menyiapkan kamera untuk selfie...',
+                        icon: 'success',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Hide scanner after successful scan
+                        const scannerElement = document.getElementById('barcode-scanner');
+                        scannerElement.style.display = 'none';
                         
-                        // Tampilkan SweetAlert
-                        Swal.fire({
-                            title: 'QR Code Terdeteksi!',
-                            text: 'Menyiapkan kamera untuk selfie...',
-                            icon: 'success',
-                            timer: 2000,
-                            timerProgressBar: true,
-                            showConfirmButton: false
-                        }).then(() => {
-                            // Hide scanner after successful scan
-                            scannerElement.style.display = 'none';
-                            
-                            // Start camera automatically
-                            startCamera();
-                        });
+                        // Start camera automatically
+                        startCamera();
                     });
                 });
-            })
-            .catch(error => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Terjadi kesalahan: ' + error,
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-            });
-        }
-    });
-</script>
+
+                // Start camera function
+                async function startCamera() {
+                    try {
+                        // Langsung meminta izin kamera (tanpa perlu scan image)
+                        stream = await navigator.mediaDevices.getUserMedia({ 
+                            video: { facingMode: "user" } 
+                        });
+                        cameraView.srcObject = stream;
+                        cameraContainer.style.display = 'block';
+                        
+                        // Tampilkan SweetAlert untuk instruksi
+                        Swal.fire({
+                            title: 'Kamera Siap',
+                            text: 'Harap tunggu 3 detik untuk foto otomatis...',
+                            icon: 'info',
+                            timer: 1000,
+                            showConfirmButton: false,
+                            timerProgressBar: true
+                        }).then(() => {
+                            // Start countdown after camera is ready
+                            startCountdown();
+                        });
+                    } catch (err) {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Gagal mengakses kamera: ' + err,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                }
+
+                // Countdown function
+                function startCountdown() {
+                    countdownElement.style.display = 'block';
+                    let count = 3;
+                    countdownElement.textContent = count;
+                    
+                    const countInterval = setInterval(() => {
+                        count--;
+                        countdownElement.textContent = count;
+                        
+                        if (count <= 0) {
+                            clearInterval(countInterval);
+                            countdownElement.style.display = 'none';
+                            capturePhoto();
+                        }
+                    }, 1000);
+                }
+
+                // Capture photo function
+                function capturePhoto() {
+                    const context = cameraCanvas.getContext('2d');
+                    cameraCanvas.width = cameraView.videoWidth;
+                    cameraCanvas.height = cameraView.videoHeight;
+                    context.drawImage(cameraView, 0, 0, cameraCanvas.width, cameraCanvas.height);
+                    
+                    // Convert canvas to blob/file
+                    cameraCanvas.toBlob((blob) => {
+                        selfieBlob = blob;
+                        const imageUrl = URL.createObjectURL(blob);
+                        selfieImage.src = imageUrl;
+                        
+                        // Show preview and hide camera
+                        selfiePreview.style.display = 'block';
+                        cameraContainer.style.display = 'none';
+                        
+                        // Tampilkan SweetAlert untuk konfirmasi selfie
+                        Swal.fire({
+                            title: 'Selfie Diambil',
+                            text: 'Apakah Anda ingin menggunakan selfie ini?',
+                            imageUrl: imageUrl,
+                            imageWidth: 300,
+                            imageHeight: 225,
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, Kirim',
+                            cancelButtonText: 'Ambil Ulang',
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // If user confirmed, submit data
+                                submitData();
+                            } else {
+                                // If user wants to retake
+                                selfiePreview.style.display = 'none';
+                                startCamera();
+                            }
+                        });
+                    }, 'image/jpeg', 0.8);
+                }
+
+                // Function to submit data to server
+                function submitData() {
+                    Swal.fire({
+                        title: 'Sedang Mengirim...',
+                        text: 'Mohon tunggu sebentar',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    const formData = new FormData();
+                    formData.append('barcode', barcodeData);
+                    formData.append('selfie', selfieBlob, 'selfie.jpg');
+                    formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                    
+                    // Parse data barcode for additional info
+                    const [userId, idJadwal, scanTime] = barcodeData.split('|');
+                    formData.append('id_jadwal', idJadwal);
+
+                    // Submit the data
+                    fetch('/handle-scan', {
+                        method: 'POST',
+                        body: formData,
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Show success message with SweetAlert
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: data.message,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            // Reset UI
+                            selfiePreview.style.display = 'none';
+                            
+                            // Stop camera stream
+                            if (stream) {
+                                stream.getTracks().forEach(track => track.stop());
+                            }
+                            
+                            // Reset data
+                            barcodeData = null;
+                            selfieBlob = null;
+                            
+                            // Show scanner again
+                            const scannerElement = document.getElementById('barcode-scanner');
+                            scannerElement.style.display = 'block';
+                            
+                            // Restart scanner
+                            scanner.render((decodedText) => {
+                                document.getElementById('barcode-result').value = decodedText;
+                                scanner.clear();
+                                barcodeData = decodedText;
+                                
+                                // Tampilkan SweetAlert
+                                Swal.fire({
+                                    title: 'QR Code Terdeteksi!',
+                                    text: 'Menyiapkan kamera untuk selfie...',
+                                    icon: 'success',
+                                    timer: 2000,
+                                    timerProgressBar: true,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    // Hide scanner after successful scan
+                                    scannerElement.style.display = 'none';
+                                    
+                                    // Start camera automatically
+                                    startCamera();
+                                });
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan: ' + error,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    });
+                }
+            }
+        });
+    </script>
+</div>
