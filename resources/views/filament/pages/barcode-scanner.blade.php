@@ -39,13 +39,53 @@
             }
             
             function initScanner() {
+                // Style untuk menyembunyikan teks scan image
+                const style = document.createElement('style');
+                style.textContent = `
+                    #barcode-scanner section div:first-child span {
+                        display: none !important;
+                    }
+                    #barcode-scanner section div button span {
+                        display: none !important;
+                    }
+                    #barcode-scanner section div button::before {
+                        content: "Scan QR Code";
+                    }
+                    #barcode-scanner section div:nth-child(2) {
+                        display: none !important;
+                    }
+                `;
+                document.head.appendChild(style);
+                
                 // Barcode scanner setup dengan lebar dan tinggi penuh
                 const scanner = new Html5QrcodeScanner("barcode-scanner", {
                     fps: 10,
                     qrbox: { width: 300, height: 300 },
                     aspectRatio: window.innerWidth / window.innerHeight,
-                    disableFlip: false
+                    disableFlip: false,
+                    rememberLastUsedCamera: true,
+                    showTorchButtonIfSupported: true
                 });
+
+                // Mengganti teks tombol setelah scanner dirender
+                setTimeout(() => {
+                    const qrBoxElements = document.querySelectorAll('#barcode-scanner section div');
+                    if (qrBoxElements.length > 0) {
+                        // Sembunyikan teks yang tidak diinginkan
+                        const fileSelectionContainer = document.querySelector('#barcode-scanner section div:nth-child(2)');
+                        if (fileSelectionContainer) {
+                            fileSelectionContainer.style.display = 'none';
+                        }
+                        
+                        // Hapus atau ganti teks lainnya
+                        const headerTexts = document.querySelectorAll('#barcode-scanner section div span');
+                        headerTexts.forEach(span => {
+                            if (span.textContent.includes('Scan')) {
+                                span.style.display = 'none';
+                            }
+                        });
+                    }
+                }, 500);
 
                 let barcodeData = null;
                 let selfieBlob = null;
@@ -245,6 +285,21 @@
                                     startCamera();
                                 });
                             });
+                            
+                            // Sembunyikan teks scan image lagi
+                            setTimeout(() => {
+                                const fileSelectionContainer = document.querySelector('#barcode-scanner section div:nth-child(2)');
+                                if (fileSelectionContainer) {
+                                    fileSelectionContainer.style.display = 'none';
+                                }
+                                
+                                const headerTexts = document.querySelectorAll('#barcode-scanner section div span');
+                                headerTexts.forEach(span => {
+                                    if (span.textContent.includes('Scan')) {
+                                        span.style.display = 'none';
+                                    }
+                                });
+                            }, 500);
                         });
                     })
                     .catch(error => {
