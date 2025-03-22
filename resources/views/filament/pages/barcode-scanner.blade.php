@@ -12,6 +12,14 @@
             <img id="selfie-image" width="100%" height="100%">
         </div>
     </div>
+    <style>
+        /* CSS untuk menyembunyikan tombol Scan an Image File */
+        .scan-title, 
+        a[href="#scan-image"],
+        a:contains("Scan an Image File") {
+            display: none; /* Menyembunyikan tombol dan teks "Request Camera Permissions" */
+        }
+    </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
