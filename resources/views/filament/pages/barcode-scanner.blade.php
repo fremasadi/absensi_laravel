@@ -261,6 +261,7 @@
                     const formData = new FormData();
                     formData.append('absensi_id', document.getElementById('absensi-id').value);
                     formData.append('selfie', selfieFile);
+                    formData.append('selfie_type', document.getElementById('selfie-type').value); // Jenis selfie
 
                     // Upload selfie ke server
                     fetch('/upload-selfie', {
