@@ -25,7 +25,8 @@ class Absensi extends Model
         'durasi_hadir',
         'status_kehadiran',
         'keterangan',
-        'imageselfie', // Tambahkan kolom imageselfie
+        'selfiemasuk',
+        'selfiekeluar',
     ];
 
     /**

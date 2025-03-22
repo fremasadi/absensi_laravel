@@ -182,149 +182,140 @@
         let mediaStream = null;
 
         // Fungsi untuk memulai kamera selfie dan auto capture setelah 3 detik
-        function startSelfieCamera() {
-            const video = document.getElementById('selfie-camera');
-            const canvas = document.getElementById('selfie-canvas');
-            const selfieImage = document.getElementById('selfie-image');
-            const countdownElement = document.getElementById('countdown');
-            const countdownTimer = document.getElementById('countdown-timer');
-            const manualCaptureBtn = document.getElementById('manual-capture');
+        function startSelfieCamera(isMasuk) {
+    // Set nilai selfie_type
+    document.getElementById('selfie-type').value = isMasuk ? 'masuk' : 'keluar';
 
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-                .then((stream) => {
-                    mediaStream = stream;
-                    video.srcObject = stream;
+    // Mulai kamera
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+        .then((stream) => {
+            mediaStream = stream;
+            video.srcObject = stream;
 
-                    // Tunggu video diload
-                    video.onloadedmetadata = function() {
-                        countdownElement.style.display = 'block'; // Tampilkan countdown
+            // Tunggu video diload
+            video.onloadedmetadata = function() {
+                countdownElement.style.display = 'block'; // Tampilkan countdown
 
-                        let count = 3;
-                        countdownTimer.textContent = count;
+                let count = 3;
+                countdownTimer.textContent = count;
 
-                        const countdownInterval = setInterval(() => {
-                            count--;
-                            countdownTimer.textContent = count;
+                const countdownInterval = setInterval(() => {
+                    count--;
+                    countdownTimer.textContent = count;
 
-                            if (count <= 0) {
-                                clearInterval(countdownInterval);
-                                countdownElement.style.display = 'none'; // Sembunyikan countdown
+                    if (count <= 0) {
+                        clearInterval(countdownInterval);
+                        countdownElement.style.display = 'none'; // Sembunyikan countdown
 
-                                // Ambil gambar setelah countdown selesai
-                                captureSelfie();
-                            }
-                        }, 1000); // Update countdown setiap 1 detik
-                    };
-                })
-                .catch((err) => {
-                    console.error('Error accessing camera:', err);
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Gagal mengakses kamera. Pastikan kamera sudah diaktifkan dan izin diberikan.',
-                        icon: 'error',
-                        confirmButtonText: 'OK',
-                        confirmButtonColor: '#3085d6'
-                    });
-                });
-
-            // Tombol untuk capture manual (cadangan jika auto tidak berfungsi)
-            manualCaptureBtn.addEventListener('click', () => {
-                captureSelfie();
+                        // Ambil gambar setelah countdown selesai
+                        captureSelfie();
+                    }
+                }, 1000); // Update countdown setiap 1 detik
+            };
+        })
+        .catch((err) => {
+            console.error('Error accessing camera:', err);
+            Swal.fire({
+                title: 'Error!',
+                text: 'Gagal mengakses kamera. Pastikan kamera sudah diaktifkan dan izin diberikan.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6'
             });
-        }
-
+        });
+}
         // Fungsi untuk mengambil selfie dan upload
         function captureSelfie() {
-            const video = document.getElementById('selfie-camera');
-            const canvas = document.getElementById('selfie-canvas');
-            const selfieImage = document.getElementById('selfie-image');
+    const video = document.getElementById('selfie-camera');
+    const canvas = document.getElementById('selfie-canvas');
+    const selfieImage = document.getElementById('selfie-image');
 
-            // Pastikan video sudah siap
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                // Set ukuran canvas sama dengan video
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
+    // Pastikan video sudah siap
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        // Set ukuran canvas sama dengan video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
 
-                // Gambar dari video ke canvas
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Gambar dari video ke canvas
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                // Tampilkan loading
+        // Tampilkan loading
+        Swal.fire({
+            title: 'Mengupload',
+            text: 'Sedang mengupload selfie...',
+            icon: 'info',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Konversi canvas ke blob (untuk upload file)
+        canvas.toBlob(function(blob) {
+            // Buat file dari blob
+            const selfieFile = new File([blob], "selfie.jpg", { type: "image/jpeg" });
+
+            // Buat FormData untuk upload
+            const formData = new FormData();
+            formData.append('absensi_id', document.getElementById('absensi-id').value);
+            formData.append('selfie', selfieFile);
+            formData.append('selfie_type', document.getElementById('selfie-type').value); // Jenis selfie
+
+            // Upload selfie ke server
+            fetch('/upload-selfie', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hentikan kamera setelah selesai
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                }
+
+                // Sembunyikan bagian selfie
+                document.getElementById('selfie-upload-section').style.display = 'none';
+
+                // Tampilkan pesan sukses
                 Swal.fire({
-                    title: 'Mengupload',
-                    text: 'Sedang mengupload selfie...',
-                    icon: 'info',
-                    allowOutsideClick: false,
-                    showConfirmButton: false,
-                    willOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
-                // Konversi canvas ke blob (untuk upload file)
-                canvas.toBlob(function(blob) {
-                    // Buat file dari blob
-                    const selfieFile = new File([blob], "selfie.jpg", { type: "image/jpeg" });
-
-                    // Buat FormData untuk upload
-                    const formData = new FormData();
-                    formData.append('absensi_id', document.getElementById('absensi-id').value);
-                    formData.append('selfie', selfieFile);
-
-                    // Upload selfie ke server
-                    fetch('/upload-selfie', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        },
-                        body: formData,
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        // Hentikan kamera setelah selesai
-                        if (mediaStream) {
-                            mediaStream.getTracks().forEach(track => track.stop());
-                        }
-
-                        // Sembunyikan bagian selfie
-                        document.getElementById('selfie-upload-section').style.display = 'none';
-
-                        // Tampilkan pesan sukses
-                        Swal.fire({
-                            title: 'Berhasil!',
-                            text: data.message,
-                            icon: 'success',
-                            confirmButtonText: 'OK',
-                            confirmButtonColor: '#3085d6'
-                        }).then(() => {
-                            // Reinisialisasi scanner
-                            scanner.render();
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error uploading selfie:', error);
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'Gagal mengunggah selfie. Silakan coba lagi.',
-                            icon: 'error',
-                            confirmButtonText: 'Coba Lagi',
-                            confirmButtonColor: '#3085d6'
-                        });
-                        // Tampilkan tombol capture manual sebagai backup
-                        document.getElementById('manual-capture').style.display = 'block';
-                    });
-                }, 'image/jpeg', 0.8); // Format JPEG dengan kualitas 80%
-            } else {
-                Swal.fire({
-                    title: 'Perhatian',
-                    text: 'Kamera belum siap. Silakan tunggu sebentar atau gunakan tombol manual.',
-                    icon: 'warning',
+                    title: 'Berhasil!',
+                    text: data.message,
+                    icon: 'success',
                     confirmButtonText: 'OK',
                     confirmButtonColor: '#3085d6'
+                }).then(() => {
+                    // Reinisialisasi scanner
+                    scanner.render();
                 });
+            })
+            .catch(error => {
+                console.error('Error uploading selfie:', error);
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Gagal mengunggah selfie. Silakan coba lagi.',
+                    icon: 'error',
+                    confirmButtonText: 'Coba Lagi',
+                    confirmButtonColor: '#3085d6'
+                });
+                // Tampilkan tombol capture manual sebagai backup
                 document.getElementById('manual-capture').style.display = 'block';
-            }
-        }
-    });
+            });
+        }, 'image/jpeg', 0.8); // Format JPEG dengan kualitas 80%
+    } else {
+        Swal.fire({
+            title: 'Perhatian',
+            text: 'Kamera belum siap. Silakan tunggu sebentar atau gunakan tombol manual.',
+            icon: 'warning',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#3085d6'
+        });
+        document.getElementById('manual-capture').style.display = 'block';
+    }
+}
 </script>
 </div>

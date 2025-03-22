@@ -122,38 +122,41 @@ class AbsensiController extends Controller
 
     // Fungsi untuk menangani upload selfie
     public function uploadSelfie(Request $request)
-    {
-        $request->validate([
-            'absensi_id' => 'required|exists:absensi,id',
-            'selfie' => 'required|image|mimes:jpeg,png,jpg|max:2048', // Batasan file: 2MB, format JPEG/PNG/JPG
-        ]);
+{
+    $request->validate([
+        'absensi_id' => 'required|exists:absensi,id',
+        'selfie' => 'required|image|mimes:jpeg,png,jpg|max:2048', // Batasan file: 2MB, format JPEG/PNG/JPG
+        'selfie_type' => 'required|in:masuk,keluar', // Pastikan jenis selfie valid
+    ]);
 
-        $absensi = Absensi::find($request->absensi_id);
+    $absensi = Absensi::find($request->absensi_id);
 
-        if (!$absensi) {
-            return response()->json(['message' => 'Data absensi tidak ditemukan.'], 404);
-        }
-
-        // Simpan file selfie
-        if ($request->hasFile('selfie')) {
-            $file = $request->file('selfie');
-            $fileName = 'selfie_' . time() . '.' . $file->getClientOriginalExtension();
-            $filePath = $file->storeAs('selfies', $fileName, 'public'); // Simpan di folder 'selfies'
-
-            // Update kolom imageselfie di tabel absensi
-            $absensi->update([
-                'imageselfie' => $filePath
-            ]);
-
-            return response()->json([
-                'message' => 'Selfie berhasil diupload.',
-                'file_path' => $filePath
-            ]);
-        }
-
-        return response()->json(['message' => 'Gagal mengupload selfie.'], 400);
+    if (!$absensi) {
+        return response()->json(['message' => 'Data absensi tidak ditemukan.'], 404);
     }
 
+    // Simpan file selfie
+    if ($request->hasFile('selfie')) {
+        $file = $request->file('selfie');
+        $fileName = 'selfie_' . time() . '.' . $file->getClientOriginalExtension();
+        $filePath = $file->storeAs('selfies', $fileName, 'public'); // Simpan di folder 'selfies'
+
+        // Tentukan kolom yang akan diupdate berdasarkan jenis selfie
+        $column = $request->selfie_type === 'masuk' ? 'selfiemasuk' : 'selfiekeluar';
+
+        // Update kolom yang sesuai
+        $absensi->update([
+            $column => $filePath
+        ]);
+
+        return response()->json([
+            'message' => 'Selfie ' . $request->selfie_type . ' berhasil diupload.',
+            'file_path' => $filePath
+        ]);
+    }
+
+    return response()->json(['message' => 'Gagal mengupload selfie.'], 400);
+}
     // Helper function untuk memformat durasi
     private function formatDurasi($minutes)
     {
