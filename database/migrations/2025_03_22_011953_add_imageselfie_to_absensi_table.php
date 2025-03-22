@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('absensi', function (Blueprint $table) {
-            $table->string('imageselfie')->nullable()->after('keterangan');
+            $table->string('selfiemasuk')->nullable()->after('keterangan');
+            $table->string('selfiekeluar')->nullable()->after('selfiemasuk');
         });
     }
 
