@@ -1,6 +1,6 @@
 <div>
     <div id="barcode-scanner" style="width: 100%; height: 300px;"></div>
-    <input type="hidden" name="{{ $getName() }}" id="barcode-result">
+    <input type="hidden" name="barcode_result" id="barcode-result">
     
     <div class="mt-4">
         <h3 class="text-lg font-medium">Ambil Selfie</h3>
