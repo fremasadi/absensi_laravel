@@ -3,7 +3,6 @@
     <input type="hidden" name="barcode_result" id="barcode-result">
     
     <div class="mt-4">
-        <h3 class="text-lg font-medium">Ambil Selfie</h3>
         <div id="camera-container" class="my-2 w-80 h-60 border border-gray-300 hidden relative">
             <video id="camera-view" class="w-full h-full" autoplay></video>
             <div id="countdown" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl text-white font-bold hidden">3</div>
