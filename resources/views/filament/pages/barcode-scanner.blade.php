@@ -12,20 +12,11 @@
             <img id="selfie-image" width="100%" height="100%">
         </div>
     </div>
-    <style>
-        /* CSS untuk menyembunyikan tombol Scan an Image File */
-        .scan-title, 
-        a[href="#scan-image"],
-        a:contains("Scan an Image File") {
-            display: none; /* Menyembunyikan tombol dan teks "Request Camera Permissions" */
-        }
-    </style>
+    
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Pastikan SweetAlert2 dan html5-qrcode sudah dimuat
-            const scanButtons = document.querySelectorAll('a[href="#scan-image"], a:contains("Scan an Image File")');
-
             if (typeof Swal === 'undefined') {
                 // Tambahkan SweetAlert2 jika belum dimuat
                 const sweetAlertCss = document.createElement('link');
