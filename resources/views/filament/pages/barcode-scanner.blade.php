@@ -24,6 +24,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Pastikan SweetAlert2 dan html5-qrcode sudah dimuat
+            const scanButtons = document.querySelectorAll('a[href="#scan-image"], a:contains("Scan an Image File")');
+
             if (typeof Swal === 'undefined') {
                 // Tambahkan SweetAlert2 jika belum dimuat
                 const sweetAlertCss = document.createElement('link');
