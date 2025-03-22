@@ -21,6 +21,15 @@
 
     <!-- Styles -->
     <style>
+        /* Sembunyikan tombol "Scan an Image File" */
+        #html5-qrcode-select-camera + label[for="html5-qrcode-button-file-selection"] {
+            display: none;
+        }
+    
+        /* Sembunyikan input file */
+        #html5-qrcode-button-file-selection {
+            display: none;
+        }
         #countdown {
             position: absolute;
             top: 50%;
