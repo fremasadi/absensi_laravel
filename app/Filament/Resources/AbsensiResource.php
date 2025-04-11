@@ -140,15 +140,15 @@ class AbsensiResource extends Resource
                             return 'Tidak ada data selfie masuk';
                         }
                         
-                        $fullUrl = 'https://tokokita.frecode.my.id/storage/' . $record->selfiemasuk;
-                        
-                        return <<<HTML
-                            <div class="flex justify-center">
-                                <img src="{$fullUrl}" alt="Selfie Masuk" class="max-w-full max-h-96">
-                            </div>
-                        HTML;
+                        return "<div class='flex justify-center p-4'>
+                            <img src='".asset($record->selfiemasuk)."' alt='Selfie Masuk' class='rounded-lg shadow-md max-w-full h-auto'>
+                        </div>";
                     })
-                    ->visible(fn ($record) => $record->selfiemasuk),
+                    ->modalFooter(fn ($record) => $record->selfiemasuk 
+                        ? "<a href='".asset($record->selfiemasuk)."' target='_blank' class='px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600'>
+                            Buka Gambar
+                        </a>"
+                        : ''),
                     
                 Tables\Actions\Action::make('lihatSelfiekeluar')
                     ->label('Lihat Selfie Keluar')
@@ -159,16 +159,16 @@ class AbsensiResource extends Resource
                             return 'Tidak ada data selfie keluar';
                         }
                         
-                        $fullUrl = 'https://tokokita.frecode.my.id/storage/' . $record->selfiekeluar;
-                        
-                        return <<<HTML
-                            <div class="flex justify-center">
-                                <img src="{$fullUrl}" alt="Selfie Keluar" class="max-w-full max-h-96">
-                            </div>
-                        HTML;
+                        return "<div class='flex justify-center p-4'>
+                            <img src='".asset($record->selfiekeluar)."' alt='Selfie Keluar' class='rounded-lg shadow-md max-w-full h-auto'>
+                        </div>";
                     })
-                    ->visible(fn ($record) => $record->selfiekeluar),
-            ])
+                    ->modalFooter(fn ($record) => $record->selfiekeluar 
+                        ? "<a href='".asset($record->selfiekeluar)."' target='_blank' class='px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600'>
+                            Buka Gambar
+                        </a>"
+                        : '')
+            ])            
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     // Tables\Actions\DeleteBulkAction::make(),
