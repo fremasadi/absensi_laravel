@@ -92,10 +92,10 @@ class AbsensiResource extends Resource
                 Tables\Columns\TextColumn::make('keterangan')
                     ->searchable(),
                 Tables\Columns\ImageColumn::make('selfiemasuk')
-                    ->size(100, 100)
+                    ->size(50, 50)
                     ->searchable(),
                 Tables\Columns\ImageColumn::make('selfiekeluar')
-                    ->size(100, 100)
+                    ->size(50, 50)
                     ->searchable(),        
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -133,7 +133,7 @@ class AbsensiResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
