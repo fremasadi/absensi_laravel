@@ -138,36 +138,29 @@ class AbsensiResource extends Resource
                     ->modalHeading('Selfie Masuk')
                     ->modalContent(function ($record) {
                         if (!$record->selfiemasuk) {
-                            return new \Illuminate\View\View('components.empty-state', [
+                            return view('components.empty-state', [
                                 'message' => 'Tidak ada data selfie masuk'
                             ]);
                         }
                         
                         return view('components.image-viewer', [
-                            'imageUrl' => Storage::url($record->selfiemasuk), // Konversi ke URL Storage
+                            'imageUrl' => Storage::url($record->selfiemasuk),
                             'alt' => 'Selfie Masuk'
                         ]);
                     })
+                    ->modalFooterActions([
+                        \Filament\Actions\Action::make('OK')
+                            ->color('primary')
+                            ->close(),
+                            
+                        \Filament\Actions\Action::make('Buka di Tab Baru')
+                            ->color('gray')
+                            ->url(fn ($record) => Storage::url($record->selfiemasuk))
+                            ->openUrlInNewTab()
+                            ->hidden(fn ($record) => !$record->selfiemasuk),
+                    ])
                     ->visible(fn ($record) => $record->selfiemasuk),
-                    
-                Tables\Actions\Action::make('lihatSelfiekeluar')
-                    ->label('Lihat Selfie Keluar')
-                    ->icon('heroicon-o-eye')
-                    ->modalHeading('Selfie Keluar')
-                    ->modalContent(function ($record) {
-                        if (!$record->selfiekeluar) {
-                            return new \Illuminate\View\View('components.empty-state', [
-                                'message' => 'Tidak ada data selfie keluar'
-                            ]);
-                        }
-                        
-                        return view('components.image-viewer', [
-                            'imageUrl' => Storage::url($record->selfiekeluar), // Konversi ke URL Storage
-                            'alt' => 'Selfie Keluar'
-                        ]);
-                    })
-                    ->visible(fn ($record) => $record->selfiekeluar),
-            ])            
+            ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     // Tables\Actions\DeleteBulkAction::make(),
