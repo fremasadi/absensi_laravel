@@ -93,11 +93,12 @@ class AbsensiResource extends Resource
                     ->searchable(),
                 Tables\Columns\ImageColumn::make('selfiemasuk')
                     ->size(50, 50)
-                    ->placeholder('No Image')
-                    ->searchable(),    
+                    ->defaultImageUrl(asset('images/no_data.jpg'))
+                    ->searchable(),
+                
                 Tables\Columns\ImageColumn::make('selfiekeluar')
                     ->size(50, 50)
-                    ->placeholder('No Image')
+                    ->defaultImageUrl(asset('images/no_data.jpg'))
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -130,8 +131,37 @@ class AbsensiResource extends Resource
                     }),
             ])
             ->actions([
-                // Tables\Actions\EditAction::make(),
-
+                Tables\Actions\Action::make('lihatSelfiemasuk')
+                    ->label('Lihat Selfie Masuk')
+                    ->icon('heroicon-o-eye')
+                    ->modalHeading('Selfie Masuk')
+                    ->modalContent(function ($record) {
+                        if (!$record->selfiemasuk) {
+                            return 'Tidak ada data selfie masuk';
+                        }
+                        
+                        return view('components.image-viewer', [
+                            'image' => $record->selfiemasuk,
+                            'alt' => 'Selfie Masuk'
+                        ]);
+                    })
+                    ->visible(fn ($record) => $record->selfiemasuk),
+                    
+                Tables\Actions\Action::make('lihatSelfiekeluar')
+                    ->label('Lihat Selfie Keluar')
+                    ->icon('heroicon-o-eye')
+                    ->modalHeading('Selfie Keluar')
+                    ->modalContent(function ($record) {
+                        if (!$record->selfiekeluar) {
+                            return 'Tidak ada data selfie keluar';
+                        }
+                        
+                        return view('components.image-viewer', [
+                            'image' => $record->selfiekeluar,
+                            'alt' => 'Selfie Keluar'
+                        ]);
+                    })
+                    ->visible(fn ($record) => $record->selfiekeluar),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
