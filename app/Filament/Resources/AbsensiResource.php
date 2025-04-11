@@ -93,10 +93,12 @@ class AbsensiResource extends Resource
                     ->searchable(),
                 Tables\Columns\ImageColumn::make('selfiemasuk')
                     ->size(50, 50)
-                    ->searchable(),
+                    ->placeholder('No Image')
+                    ->searchable(),    
                 Tables\Columns\ImageColumn::make('selfiekeluar')
                     ->size(50, 50)
-                    ->searchable(),        
+                    ->placeholder('No Image')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
