@@ -140,10 +140,13 @@ class AbsensiResource extends Resource
                             return 'Tidak ada data selfie masuk';
                         }
                         
-                        return view('components.image-viewer', [
-                            'image' => $record->selfiemasuk,
-                            'alt' => 'Selfie Masuk'
-                        ]);
+                        $fullUrl = 'https://tokokita.frecode.my.id/storage/' . $record->selfiemasuk;
+                        
+                        return <<<HTML
+                            <div class="flex justify-center">
+                                <img src="{$fullUrl}" alt="Selfie Masuk" class="max-w-full max-h-96">
+                            </div>
+                        HTML;
                     })
                     ->visible(fn ($record) => $record->selfiemasuk),
                     
@@ -156,10 +159,13 @@ class AbsensiResource extends Resource
                             return 'Tidak ada data selfie keluar';
                         }
                         
-                        return view('components.image-viewer', [
-                            'image' => $record->selfiekeluar,
-                            'alt' => 'Selfie Keluar'
-                        ]);
+                        $fullUrl = 'https://tokokita.frecode.my.id/storage/' . $record->selfiekeluar;
+                        
+                        return <<<HTML
+                            <div class="flex justify-center">
+                                <img src="{$fullUrl}" alt="Selfie Keluar" class="max-w-full max-h-96">
+                            </div>
+                        HTML;
                     })
                     ->visible(fn ($record) => $record->selfiekeluar),
             ])
