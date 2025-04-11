@@ -92,8 +92,10 @@ class AbsensiResource extends Resource
                 Tables\Columns\TextColumn::make('keterangan')
                     ->searchable(),
                 Tables\Columns\ImageColumn::make('selfiemasuk')
+                    ->size(100, 100)
                     ->searchable(),
                 Tables\Columns\ImageColumn::make('selfiekeluar')
+                    ->size(100, 100)
                     ->searchable(),        
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -126,7 +128,7 @@ class AbsensiResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                // Tables\Actions\EditAction::make(),
 
             ])
             ->bulkActions([
@@ -148,8 +150,8 @@ class AbsensiResource extends Resource
     {
         return [
             'index' => Pages\ListAbsensis::route('/'),
-            'create' => Pages\CreateAbsensi::route('/create'),
-            'edit' => Pages\EditAbsensi::route('/{record}/edit'),
+            // 'create' => Pages\CreateAbsensi::route('/create'),
+            // 'edit' => Pages\EditAbsensi::route('/{record}/edit'),
         ];
     }
 }
