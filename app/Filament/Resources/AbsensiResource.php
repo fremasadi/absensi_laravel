@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Support\Facades\Storage;
 
 class AbsensiResource extends Resource
 {
@@ -137,18 +138,17 @@ class AbsensiResource extends Resource
                     ->modalHeading('Selfie Masuk')
                     ->modalContent(function ($record) {
                         if (!$record->selfiemasuk) {
-                            return 'Tidak ada data selfie masuk';
+                            return new \Illuminate\View\View('components.empty-state', [
+                                'message' => 'Tidak ada data selfie masuk'
+                            ]);
                         }
                         
-                        return "<div class='flex justify-center p-4'>
-                            <img src='".asset($record->selfiemasuk)."' alt='Selfie Masuk' class='rounded-lg shadow-md max-w-full h-auto'>
-                        </div>";
+                        return view('components.image-viewer', [
+                            'imageUrl' => Storage::url($record->selfiemasuk), // Konversi ke URL Storage
+                            'alt' => 'Selfie Masuk'
+                        ]);
                     })
-                    ->modalFooter(fn ($record) => $record->selfiemasuk 
-                        ? "<a href='".asset($record->selfiemasuk)."' target='_blank' class='px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600'>
-                            Buka Gambar
-                        </a>"
-                        : ''),
+                    ->visible(fn ($record) => $record->selfiemasuk),
                     
                 Tables\Actions\Action::make('lihatSelfiekeluar')
                     ->label('Lihat Selfie Keluar')
@@ -156,18 +156,17 @@ class AbsensiResource extends Resource
                     ->modalHeading('Selfie Keluar')
                     ->modalContent(function ($record) {
                         if (!$record->selfiekeluar) {
-                            return 'Tidak ada data selfie keluar';
+                            return new \Illuminate\View\View('components.empty-state', [
+                                'message' => 'Tidak ada data selfie keluar'
+                            ]);
                         }
                         
-                        return "<div class='flex justify-center p-4'>
-                            <img src='".asset($record->selfiekeluar)."' alt='Selfie Keluar' class='rounded-lg shadow-md max-w-full h-auto'>
-                        </div>";
+                        return view('components.image-viewer', [
+                            'imageUrl' => Storage::url($record->selfiekeluar), // Konversi ke URL Storage
+                            'alt' => 'Selfie Keluar'
+                        ]);
                     })
-                    ->modalFooter(fn ($record) => $record->selfiekeluar 
-                        ? "<a href='".asset($record->selfiekeluar)."' target='_blank' class='px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600'>
-                            Buka Gambar
-                        </a>"
-                        : '')
+                    ->visible(fn ($record) => $record->selfiekeluar),
             ])            
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
