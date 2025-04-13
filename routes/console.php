@@ -50,8 +50,8 @@ function checkMissingAttendance($output = null) {
             $durasiHadir = max($waktuMasuk->diffInMinutes($shiftEnd), 0);
 
             $absensi->update([
-                'waktu_keluar_time' => $shiftEnd->toTimeString(),
-                'durasi_hadir' => $durasiHadir,
+                'waktu_keluar_time' => null,
+                'durasi_hadir' => null,
                 'keterangan' => 'tidak absen keluar',
                 'updated_at' => Carbon::now()
             ]);
