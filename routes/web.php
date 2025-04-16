@@ -7,7 +7,9 @@ use App\Http\Controllers\BarcodeController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\PermintaanIzinController;
 use App\Http\Controllers\RiwayatAbsensiController;
+use App\Http\Controllers\GajiController;
 
+Route::get('/gaji/{id}/download', [GajiController::class, 'downloadSlipGaji'])->name('gaji.downloadSlipGaji');
 Route::get('/riwayat-absensi', [RiwayatAbsensiController::class, 'index'])->name('riwayat-absensi.index');
 Route::post('/handle-scan', [AbsensiController::class, 'handleScan']);
 Route::post('/upload-selfie', [AbsensiController::class, 'uploadSelfie']);
