@@ -21,6 +21,14 @@
     <p>Nama: {{ $nama }}</p>
     <p>Periode: {{ \Carbon\Carbon::parse($periode_awal)->format('d M Y') }} - {{ \Carbon\Carbon::parse($periode_akhir)->format('d M Y') }}</p>
 </div>
-
+<div class="isi">
+    <p>Total Jam Kerja: {{ $total_jam_kerja }}</p>
+    <p>Total Gaji: Rp {{ number_format($total_gaji, 0, ',', '.') }}</p>
+    <p>Status Pembayaran: {{ ucfirst($status_pembayaran) }}</p>
+    <p>Tanggal Dibuat: {{ \Carbon\Carbon::parse($created_at)->format('d M Y H:i') }}</p>
+</div>
+<style>
+    .isi p { margin: 4px 0; }
+</style>
 </body>
 </html>

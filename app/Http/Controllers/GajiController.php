@@ -17,8 +17,12 @@ class GajiController extends Controller
             'nama' => $gaji->user->name,
             'periode_awal' => $gaji->periode_awal,
             'periode_akhir' => $gaji->periode_akhir,
+            'total_jam_kerja' => $gaji->total_jam_kerja,
+            'total_gaji' => $gaji->total_gaji,
+            'status_pembayaran' => $gaji->status_pembayaran,
+            'created_at' => $gaji->created_at,
             'perusahaan' => 'TOKOKITA',
-            'alamat' => 'Jl. Contoh Alamat No. 123, Kota Anda'
+            'alamat' => 'Jl.Alamat No. 123, Kota'
         ]);
 
         return $pdf->download("Slip_Gaji_{$gaji->user->name}_Tokokita.pdf");
