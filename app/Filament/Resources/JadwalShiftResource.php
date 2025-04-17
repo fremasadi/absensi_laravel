@@ -39,9 +39,7 @@ class JadwalShiftResource extends Resource
                 Forms\Components\Select::make('id_user')
                 ->label('User')
                 ->required()
-                ->relationship('user', 'name')
-                ->searchable()
-                ->preload(),
+                ->relationship('user', 'name'),
                 Forms\Components\Select::make('id_shift')
                 ->label('Shift')
                 ->required()
