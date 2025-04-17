@@ -36,10 +36,14 @@ class JadwalShiftResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('id_user')
+                Select::make('id_user')
                 ->label('User')
                 ->required()
-                ->relationship('user', 'name')
+                ->relationship(
+                    name: 'user',
+                    titleAttribute: 'name',
+                    modifyQueryUsing: fn ($query) => $query->orderBy('name')
+                )
                 ->searchable()
                 ->preload(),
                 Forms\Components\Select::make('id_shift')
