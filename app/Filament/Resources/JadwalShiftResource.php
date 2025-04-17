@@ -39,8 +39,9 @@ class JadwalShiftResource extends Resource
                 Forms\Components\Select::make('id_user')
                 ->label('User')
                 ->required()
-                ->relationship('user', 'name') // Mengambil relasi 'user' dan menampilkan kolom 'name'
-                ->searchable(), // Menambahkan fitur pencarian pada dropdown
+                ->relationship('user', 'name')
+                ->searchable()
+                ->preload(),
                 Forms\Components\Select::make('id_shift')
                 ->label('Shift')
                 ->required()
