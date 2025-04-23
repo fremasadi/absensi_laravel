@@ -20,8 +20,8 @@ class Dashboard extends BaseDashboard
     protected function getFooterWidgets(): array
     {
         return [
-            \App\Filament\Widgets\LatestAttendanceWidget::class,
-            \App\Filament\Widgets\PayrollWidget::class,
+            // \App\Filament\Widgets\LatestAttendanceWidget::class,
+            // \App\Filament\Widgets\PayrollWidget::class,
         ];
     }
 }

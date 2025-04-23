@@ -61,8 +61,8 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\DashboardStats::class,      // Use App namespace
                 \App\Filament\Widgets\AttendanceChartWidget::class,   // Use App namespace
                 \App\Filament\Widgets\SalaryChartWidget::class,     // Use App namespace
-                \App\Filament\Widgets\LatestAttendanceWidget::class,  // Use App namespace
-                \App\Filament\Widgets\PayrollWidget::class,       // Use App namespace
+                // \App\Filament\Widgets\LatestAttendanceWidget::class,  // Use App namespace
+                // \App\Filament\Widgets\PayrollWidget::class,       // Use App namespace
             ])
             ->middleware([
                 EncryptCookies::class,
