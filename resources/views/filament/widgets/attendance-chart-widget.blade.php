@@ -1,34 +1,59 @@
 <x-filament-widgets::widget>
     <x-filament::section>
-        <h2 class="text-lg font-medium mb-4">Attendance Overview</h2>
-        
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
-                <thead class="text-xs uppercase bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3">Date</th>
-                        <th class="px-6 py-3">Present</th>
-                        <th class="px-6 py-3">Absent</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($this->getAttendanceData() as $row)
-                        <tr class="bg-white border-b">
-                            <td class="px-6 py-4">{{ $row['date'] }}</td>
-                            <td class="px-6 py-4">
-                                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                                    {{ $row['present'] }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full">
-                                    {{ $row['absent'] }}
-                                </span>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <div class="p-4">
+            <h2 class="text-lg font-medium mb-4">Attendance Overview</h2>
+            <div class="w-full h-64">
+                <canvas id="attendance-chart-{{ $this->getId() }}" class="w-full h-full"></canvas>
+            </div>
         </div>
     </x-filament::section>
+
+    @script
+    <script>
+        // Ensure Chart.js is loaded first
+        if (typeof Chart === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            script.onload = initChart;
+            document.head.appendChild(script);
+        } else {
+            initChart();
+        }
+
+        function initChart() {
+            // Use a unique ID to prevent conflicts
+            const chartId = 'attendance-chart-{{ $this->getId() }}';
+            const chartElement = document.getElementById(chartId);
+            
+            if (!chartElement) {
+                console.error('Chart element not found:', chartId);
+                return;
+            }
+            
+            // Make sure we're dealing with a fresh canvas
+            const ctx = chartElement.getContext('2d');
+            const chartData = @js($this->getData());
+            
+            // Destroy existing chart if any
+            if (window.attendanceChart) {
+                window.attendanceChart.destroy();
+            }
+            
+            // Create new chart
+            window.attendanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+    @endscript
 </x-filament-widgets::widget>
