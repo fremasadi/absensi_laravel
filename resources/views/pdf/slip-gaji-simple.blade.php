@@ -2,33 +2,70 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Slip Gaji - Tokokita</title>
+    <title>Tanda Terima Gaji</title>
     <style>
-        body { font-family: sans-serif; font-size: 13px; }
-        .judul { text-align: center; margin-bottom: 20px; }
-        .judul h2 { margin: 0; }
-        .judul p { margin: 4px 0; }
-        .judul hr { margin-top: 10px; }
+        body {
+            font-family: sans-serif;
+            font-size: 13px;
+            margin: 20px;
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .signature-box {
+            width: 150px;
+            height: 100px;
+            border: 1px solid #000;
+            float: right;
+            text-align: center;
+            line-height: 100px;
+        }
     </style>
 </head>
 <body>
 
-<div class="judul">
-    <h2>{{ $perusahaan }}</h2>
-    <p>{{ $alamat }}</p>
-    <hr>
-    <h3>SLIP GAJI KARYAWAN</h3>
-    <p>Nama: {{ $nama }}</p>
+<div class="title">
+    <h2>Tanda Terima Gaji</h2>
     <p>Periode: {{ \Carbon\Carbon::parse($periode_awal)->format('d M Y') }} - {{ \Carbon\Carbon::parse($periode_akhir)->format('d M Y') }}</p>
 </div>
-<div class="isi">
-    <p>Total Jam Kerja: {{ $total_jam_kerja }}</p>
-    <p>Total Gaji: Rp {{ number_format($total_gaji, 0, ',', '.') }}</p>
-    <p>Status Pembayaran: {{ ucfirst($status_pembayaran) }}</p>
-    <p>Tanggal Dibuat: {{ \Carbon\Carbon::parse($created_at)->format('d M Y H:i') }}</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Nama</th>
+            <th>Total Jam</th>
+            <th>Total Gaji</th>
+            <th>TTD</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ $nama }}</td>
+            <td>{{ $total_jam_kerja }}</td>
+            <td>Rp {{ number_format($total_gaji, 0, ',', '.') }}</td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="signature-box">
+    TTD
 </div>
-<style>
-    .isi p { margin: 4px 0; }
-</style>
+
 </body>
 </html>

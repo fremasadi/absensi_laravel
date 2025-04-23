@@ -32,23 +32,19 @@ class DashboardStats extends StatsOverviewWidget
             ->avg('durasi_hadir');
         
         return [
-            Stat::make('Total Attendance Today', $totalAttendanceToday)
-                ->description('Number of attendance records today')
+            Stat::make('Jumlah Kehadiran Hari Ini', $totalAttendanceToday)
                 ->descriptionIcon('heroicon-o-user-group')
                 ->color('primary'),
             
-            Stat::make('Present Users Today', $totalUsersPresent)
-                ->description('Users marked as present today')
+            Stat::make('Pengguna Saat Ini', $totalUsersPresent)
                 ->descriptionIcon('heroicon-o-check-circle')
                 ->color('success'),
             
-            Stat::make('Total Salary This Month', 'Rp ' . number_format($totalSalaryThisMonth, 0, ',', '.'))
-                ->description('Total salary for current month')
+            Stat::make('Total Gaji Bulan Ini', 'Rp ' . number_format($totalSalaryThisMonth, 0, ',', '.'))
                 ->descriptionIcon('heroicon-o-currency-dollar')
                 ->color('warning'),
                 
-            Stat::make('Average Work Hours', round($averageWorkHours, 1) . ' hours')
-                ->description('Average work duration this month')
+            Stat::make('Rata-rata Jam Kerja', round($averageWorkHours, 1) . ' jam')
                 ->descriptionIcon('heroicon-o-clock')
                 ->color('info'),
         ];

@@ -12,8 +12,8 @@ class Dashboard extends BaseDashboard
     {
         return [
             \App\Filament\Widgets\DashboardStats::class,
-            \App\Filament\Widgets\AttendanceChartWidget::class,
-            \App\Filament\Widgets\SalaryChartWidget::class,
+            // \App\Filament\Widgets\AttendanceChartWidget::class,
+            // \App\Filament\Widgets\SalaryChartWidget::class,
         ];
     }
 
