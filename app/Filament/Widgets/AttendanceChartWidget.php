@@ -4,17 +4,17 @@ namespace App\Filament\Widgets;
 
 use App\Models\Absensi;
 use Carbon\Carbon;
-use Filament\Widgets\ChartWidget;
+use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class AttendanceChartWidget extends ChartWidget
+class AttendanceChartWidget extends ApexChartWidget
 {
     protected static ?string $heading = 'Attendance Overview';
     protected static ?int $sort = 2;
     protected int | string | array $columnSpan = 'full';
+    protected static string $chartId = 'attendanceChart';
     
-    protected function getData(): array
+    protected function getOptions(): array
     {
-        // Your existing data method remains the same
         $days = collect(range(1, 7))->map(function ($day) {
             return Carbon::now()->subDays($day)->format('Y-m-d');
         })->reverse()->toArray();
@@ -37,37 +37,41 @@ class AttendanceChartWidget extends ChartWidget
         }
         
         return [
-            'datasets' => [
+            'chart' => [
+                'type' => 'bar',
+                'height' => 300,
+            ],
+            'series' => [
                 [
-                    'label' => 'Present',
+                    'name' => 'Present',
                     'data' => $presentData,
-                    'backgroundColor' => '#10B981',
-                    'borderColor' => '#10B981',
                 ],
                 [
-                    'label' => 'Absent',
+                    'name' => 'Absent',
                     'data' => $absentData,
-                    'backgroundColor' => '#EF4444',
-                    'borderColor' => '#EF4444',
                 ],
             ],
-            'labels' => $labels,
-        ];
-    }
-    
-    protected function getType(): string
-    {
-        return 'bar';
-    }
-    
-    protected function getOptions(): array
-    {
-        return [
-            'responsive' => true,
-            'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
+            'xaxis' => [
+                'categories' => $labels,
+            ],
+            'colors' => ['#10B981', '#EF4444'],
+            'plotOptions' => [
+                'bar' => [
+                    'horizontal' => false,
+                    'columnWidth' => '55%',
+                    'endingShape' => 'rounded',
                 ],
+            ],
+            'dataLabels' => [
+                'enabled' => false,
+            ],
+            'stroke' => [
+                'show' => true,
+                'width' => 2,
+                'colors' => ['transparent'],
+            ],
+            'fill' => [
+                'opacity' => 1,
             ],
         ];
     }
