@@ -4,18 +4,15 @@ namespace App\Filament\Widgets;
 
 use App\Models\Absensi;
 use Carbon\Carbon;
-use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
+use Filament\Widgets\Widget;
 
-class AttendanceChartWidget extends ApexChartWidget
+class AttendanceChartWidget extends Widget
 {
-    protected static ?string $heading = 'Attendance Overview';
+    protected static string $view = 'filament.widgets.attendance-chart-widget';
     protected static ?int $sort = 2;
     protected int | string | array $columnSpan = 'full';
     
-    // Change this line from string to ?string
-    protected static ?string $chartId = 'attendanceChart';
-    
-    protected function getOptions(): array
+    public function getData(): array
     {
         $days = collect(range(1, 7))->map(function ($day) {
             return Carbon::now()->subDays($day)->format('Y-m-d');
@@ -39,42 +36,21 @@ class AttendanceChartWidget extends ApexChartWidget
         }
         
         return [
-            'chart' => [
-                'type' => 'bar',
-                'height' => 300,
-            ],
-            'series' => [
+            'datasets' => [
                 [
-                    'name' => 'Present',
+                    'label' => 'Present',
                     'data' => $presentData,
+                    'backgroundColor' => '#10B981',
+                    'borderColor' => '#10B981',
                 ],
                 [
-                    'name' => 'Absent',
+                    'label' => 'Absent',
                     'data' => $absentData,
+                    'backgroundColor' => '#EF4444',
+                    'borderColor' => '#EF4444',
                 ],
             ],
-            'xaxis' => [
-                'categories' => $labels,
-            ],
-            'colors' => ['#10B981', '#EF4444'],
-            'plotOptions' => [
-                'bar' => [
-                    'horizontal' => false,
-                    'columnWidth' => '55%',
-                    'endingShape' => 'rounded',
-                ],
-            ],
-            'dataLabels' => [
-                'enabled' => false,
-            ],
-            'stroke' => [
-                'show' => true,
-                'width' => 2,
-                'colors' => ['transparent'],
-            ],
-            'fill' => [
-                'opacity' => 1,
-            ],
+            'labels' => $labels,
         ];
     }
 }
