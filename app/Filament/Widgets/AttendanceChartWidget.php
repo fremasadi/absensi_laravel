@@ -12,7 +12,6 @@ class AttendanceChartWidget extends Widget
     protected static string $view = 'filament.widgets.attendance-chart-widget';
     protected static ?int $sort = 2;
     protected int | string | array $columnSpan = 'full';
-    protected ?string $chartId = null;
     
     public function getData(): array
     {
@@ -38,31 +37,14 @@ class AttendanceChartWidget extends Widget
         }
         
         return [
-            'datasets' => [
-                [
-                    'label' => 'Present',
-                    'data' => $presentData,
-                    'backgroundColor' => '#10B981',
-                    'borderColor' => '#10B981',
-                ],
-                [
-                    'label' => 'Absent',
-                    'data' => $absentData,
-                    'backgroundColor' => '#EF4444',
-                    'borderColor' => '#EF4444',
-                ],
-            ],
             'labels' => $labels,
+            'presentData' => $presentData,
+            'absentData' => $absentData,
         ];
     }
     
-    // Generate a unique ID for this widget instance
-    public function getId(): string
+    public function getChartId(): string
     {
-        if ($this->chartId === null) {
-            $this->chartId = 'attendance-chart-' . Str::random(8);
-        }
-        
-        return $this->chartId;
+        return 'attendance-chart-' . Str::random(8);
     }
 }

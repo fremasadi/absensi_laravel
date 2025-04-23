@@ -2,58 +2,77 @@
     <x-filament::section>
         <div class="p-4">
             <h2 class="text-lg font-medium mb-4">Attendance Overview</h2>
+            
+            @php
+                $data = $this->getData();
+                $chartId = $this->getChartId();
+                $labels = json_encode($data['labels']);
+                $presentData = json_encode($data['presentData']);
+                $absentData = json_encode($data['absentData']);
+            @endphp
+            
             <div class="w-full h-64">
-                <canvas id="attendance-chart-{{ $this->getId() }}" class="w-full h-full"></canvas>
+                <canvas id="{{ $chartId }}" class="w-full h-full"></canvas>
             </div>
+            
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Create a simple function to load Chart.js and initialize
+                    var initializeChart = function() {
+                        var chartId = '{{ $chartId }}';
+                        var chartElement = document.getElementById(chartId);
+                        
+                        if (!chartElement) {
+                            console.error('Chart element not found:', chartId);
+                            return;
+                        }
+                        
+                        var ctx = chartElement.getContext('2d');
+                        
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: {!! $labels !!},
+                                datasets: [
+                                    {
+                                        label: 'Present',
+                                        data: {!! $presentData !!},
+                                        backgroundColor: '#10B981',
+                                        borderColor: '#10B981'
+                                    },
+                                    {
+                                        label: 'Absent',
+                                        data: {!! $absentData !!},
+                                        backgroundColor: '#EF4444',
+                                        borderColor: '#EF4444'
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+                    };
+                    
+                    // Check if Chart.js is already loaded
+                    if (typeof Chart === 'undefined') {
+                        // If not, load it
+                        var script = document.createElement('script');
+                        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+                        script.onload = initializeChart;
+                        document.head.appendChild(script);
+                    } else {
+                        // If it's already loaded, just initialize
+                        initializeChart();
+                    }
+                });
+            </script>
         </div>
     </x-filament::section>
-
-    @script
-    <script>
-        // Ensure Chart.js is loaded first
-        if (typeof Chart === 'undefined') {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-            script.onload = initChart;
-            document.head.appendChild(script);
-        } else {
-            initChart();
-        }
-
-        function initChart() {
-            // Use a unique ID to prevent conflicts
-            const chartId = 'attendance-chart-{{ $this->getId() }}';
-            const chartElement = document.getElementById(chartId);
-            
-            if (!chartElement) {
-                console.error('Chart element not found:', chartId);
-                return;
-            }
-            
-            // Make sure we're dealing with a fresh canvas
-            const ctx = chartElement.getContext('2d');
-            const chartData = @js($this->getData());
-            
-            // Destroy existing chart if any
-            if (window.attendanceChart) {
-                window.attendanceChart.destroy();
-            }
-            
-            // Create new chart
-            window.attendanceChart = new Chart(ctx, {
-                type: 'bar',
-                data: chartData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-    </script>
-    @endscript
 </x-filament-widgets::widget>
