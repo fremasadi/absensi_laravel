@@ -58,4 +58,14 @@ class AttendanceChartWidget extends ChartWidget
     {
         return 'bar';
     }
+    protected function getOptions(): array
+{
+    return [
+        'scales' => [
+            'y' => [
+                'beginAtZero' => true,
+            ],
+        ],
+    ];
+}
 }

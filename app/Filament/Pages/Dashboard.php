@@ -12,15 +12,16 @@ class Dashboard extends BaseDashboard
     {
         return [
             \App\Filament\Widgets\DashboardStats::class,
-            
+            \App\Filament\Widgets\AttendanceChartWidget::class,
+            \App\Filament\Widgets\SalaryChartWidget::class,
         ];
     }
 
     protected function getFooterWidgets(): array
     {
         return [
-            \App\Filament\Widgets\AttendanceChartWidget::class,
-            \App\Filament\Widgets\SalaryChartWidget::class,
+            // \App\Filament\Widgets\LatestAttendanceWidget::class,
+            // \App\Filament\Widgets\PayrollWidget::class,
         ];
     }
 }
