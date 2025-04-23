@@ -17,7 +17,6 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
-        $this->app->register(FilamentApexChartsServiceProvider::class);
 
 
     }
@@ -30,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
         //
         PermintaanIzin::observe(PermintaanIzinObserver::class);
         SettingGaji::observe(SettingGajiObserver::class);
+        $this->app->register(FilamentApexChartsServiceProvider::class);
 
 
     }
