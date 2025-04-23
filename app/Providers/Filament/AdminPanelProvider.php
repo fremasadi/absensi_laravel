@@ -19,6 +19,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Resources\BarcodeScannerPageResource;
+use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 
 
 class AdminPanelProvider extends PanelProvider
@@ -46,6 +47,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->plugin(FilamentApexChartsPlugin::make())
             ->colors([
                 'primary' => Color::Blue,
             ])
@@ -61,8 +63,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\DashboardStats::class,      // Use App namespace
                 \App\Filament\Widgets\AttendanceChartWidget::class,   // Use App namespace
                 \App\Filament\Widgets\SalaryChartWidget::class,     // Use App namespace
-                // \App\Filament\Widgets\LatestAttendanceWidget::class,  // Use App namespace
-                // \App\Filament\Widgets\PayrollWidget::class,       // Use App namespace
+            
             ])
             ->middleware([
                 EncryptCookies::class,
