@@ -35,4 +35,6 @@
         @yield('scripts') <!-- Ini adalah tempat untuk skrip yang ditulis di view -->
 
     </body>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/chart-fix.js"></script>
 </html>

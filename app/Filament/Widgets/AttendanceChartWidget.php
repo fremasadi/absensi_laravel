@@ -14,6 +14,7 @@ class AttendanceChartWidget extends ChartWidget
     
     protected function getData(): array
     {
+        // Your existing data method remains the same
         $days = collect(range(1, 7))->map(function ($day) {
             return Carbon::now()->subDays($day)->format('Y-m-d');
         })->reverse()->toArray();
@@ -58,14 +59,16 @@ class AttendanceChartWidget extends ChartWidget
     {
         return 'bar';
     }
+    
     protected function getOptions(): array
-{
-    return [
-        'scales' => [
-            'y' => [
-                'beginAtZero' => true,
+    {
+        return [
+            'responsive' => true,
+            'scales' => [
+                'y' => [
+                    'beginAtZero' => true,
+                ],
             ],
-        ],
-    ];
-}
+        ];
+    }
 }
