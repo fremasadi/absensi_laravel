@@ -11,7 +11,9 @@ class AttendanceChartWidget extends ApexChartWidget
     protected static ?string $heading = 'Attendance Overview';
     protected static ?int $sort = 2;
     protected int | string | array $columnSpan = 'full';
-    protected static string $chartId = 'attendanceChart';
+    
+    // Change this line from string to ?string
+    protected static ?string $chartId = 'attendanceChart';
     
     protected function getOptions(): array
     {
