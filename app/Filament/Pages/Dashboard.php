@@ -6,19 +6,13 @@ use App\Models\Absensi;
 use App\Models\Gaji;
 use App\Models\User;
 use Filament\Pages\Dashboard as BaseDashboard;
-use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget\Card;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\ChartWidget;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Tables\Table;
-use Filament\Tables;
-use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Widgets\LatestAttendanceWidget;
+use App\Filament\Widgets\PayrollWidget;
 use Carbon\Carbon;
-use Closure;
 
 class Dashboard extends BaseDashboard
 {
@@ -93,6 +87,7 @@ class AttendanceChartWidget extends ChartWidget
 {
     protected static ?string $heading = 'Attendance Overview';
     protected static ?int $sort = 2;
+    protected int | string | array $columnSpan = 'full';
     
     protected function getData(): array
     {
@@ -147,6 +142,7 @@ class SalaryChartWidget extends ChartWidget
 {
     protected static ?string $heading = 'Salary Distribution';
     protected static ?int $sort = 3;
+    protected int | string | array $columnSpan = 'full';
     
     protected function getData(): array
     {
@@ -190,172 +186,5 @@ class SalaryChartWidget extends ChartWidget
     protected function getType(): string
     {
         return 'line';
-    }
-}
-
-class LatestAttendanceWidget extends Tables\Widgets\TableWidget
-{
-    protected static ?string $heading = 'Latest Attendance Records';
-    protected static ?int $sort = 4;
-    
-    protected function getTableQuery(): Builder
-    {
-        return Absensi::query()
-            ->with('user')
-            ->latest('tanggal_absen')
-            ->latest('waktu_masuk_time')
-            ->limit(5);
-    }
-    
-    protected function getTableColumns(): array
-    {
-        return [
-            TextColumn::make('user.name')
-                ->label('Employee')
-                ->searchable()
-                ->sortable(),
-                
-            TextColumn::make('tanggal_absen')
-                ->label('Date')
-                ->date('d M Y')
-                ->sortable(),
-                
-            TextColumn::make('waktu_masuk_time')
-                ->label('Check In')
-                ->time('H:i')
-                ->sortable(),
-                
-            TextColumn::make('waktu_keluar_time')
-                ->label('Check Out')
-                ->time('H:i')
-                ->sortable(),
-                
-            TextColumn::make('durasi_hadir')
-                ->label('Duration')
-                ->formatStateUsing(fn ($state) => $state . ' hours')
-                ->sortable(),
-                
-            BadgeColumn::make('status_kehadiran')
-                ->label('Status')
-                ->colors([
-                    'success' => 'hadir',
-                    'danger' => 'tidak_hadir',
-                    'warning' => 'terlambat',
-                ])
-                ->searchable()
-                ->sortable(),
-        ];
-    }
-    
-    protected function getTableFilters(): array
-    {
-        return [
-            SelectFilter::make('status_kehadiran')
-                ->options([
-                    'hadir' => 'Present',
-                    'tidak_hadir' => 'Absent',
-                    'terlambat' => 'Late',
-                ]),
-                
-            Filter::make('date')
-                ->form([
-                    \Filament\Forms\Components\DatePicker::make('from_date'),
-                    \Filament\Forms\Components\DatePicker::make('to_date'),
-                ])
-                ->query(function (Builder $query, array $data): Builder {
-                    return $query
-                        ->when(
-                            $data['from_date'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('tanggal_absen', '>=', $date),
-                        )
-                        ->when(
-                            $data['to_date'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('tanggal_absen', '<=', $date),
-                        );
-                }),
-        ];
-    }
-}
-
-class PayrollWidget extends Tables\Widgets\TableWidget
-{
-    protected static ?string $heading = 'Recent Payroll Records';
-    protected static ?int $sort = 5;
-    
-    protected function getTableQuery(): Builder
-    {
-        return Gaji::query()
-            ->with('user')
-            ->latest('periode_akhir')
-            ->limit(5);
-    }
-    
-    protected function getTableColumns(): array
-    {
-        return [
-            TextColumn::make('user.name')
-                ->label('Employee')
-                ->searchable()
-                ->sortable(),
-                
-            TextColumn::make('periode_awal')
-                ->label('Start Period')
-                ->date('d M Y')
-                ->sortable(),
-                
-            TextColumn::make('periode_akhir')
-                ->label('End Period')
-                ->date('d M Y')
-                ->sortable(),
-                
-            TextColumn::make('total_jam_kerja')
-                ->label('Work Hours')
-                ->formatStateUsing(fn ($state) => $state . ' hours')
-                ->sortable(),
-                
-            TextColumn::make('total_gaji')
-                ->label('Total Salary')
-                ->money('IDR')
-                ->sortable(),
-                
-            BadgeColumn::make('status_pembayaran')
-                ->label('Payment Status')
-                ->colors([
-                    'success' => 'sudah_dibayar',
-                    'danger' => 'belum_dibayar',
-                    'warning' => 'pending',
-                ])
-                ->searchable()
-                ->sortable(),
-        ];
-    }
-    
-    protected function getTableFilters(): array
-    {
-        return [
-            SelectFilter::make('status_pembayaran')
-                ->options([
-                    'sudah_dibayar' => 'Paid',
-                    'belum_dibayar' => 'Unpaid',
-                    'pending' => 'Pending',
-                ]),
-                
-            Filter::make('period')
-                ->form([
-                    \Filament\Forms\Components\DatePicker::make('from_date'),
-                    \Filament\Forms\Components\DatePicker::make('to_date'),
-                ])
-                ->query(function (Builder $query, array $data): Builder {
-                    return $query
-                        ->when(
-                            $data['from_date'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('periode_awal', '>=', $date),
-                        )
-                        ->when(
-                            $data['to_date'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('periode_akhir', '<=', $date),
-                        );
-                }),
-        ];
     }
 }

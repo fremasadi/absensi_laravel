@@ -58,6 +58,11 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,
+                DashboardStats::class,
+                AttendanceChartWidget::class,
+                SalaryChartWidget::class,
+                LatestAttendanceWidget::class,
+                PayrollWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
