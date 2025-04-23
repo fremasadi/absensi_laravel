@@ -5,12 +5,14 @@ namespace App\Filament\Widgets;
 use App\Models\Absensi;
 use Carbon\Carbon;
 use Filament\Widgets\Widget;
+use Illuminate\Support\Str;
 
 class AttendanceChartWidget extends Widget
 {
     protected static string $view = 'filament.widgets.attendance-chart-widget';
     protected static ?int $sort = 2;
     protected int | string | array $columnSpan = 'full';
+    protected ?string $chartId = null;
     
     public function getData(): array
     {
@@ -52,5 +54,15 @@ class AttendanceChartWidget extends Widget
             ],
             'labels' => $labels,
         ];
+    }
+    
+    // Generate a unique ID for this widget instance
+    public function getId(): string
+    {
+        if ($this->chartId === null) {
+            $this->chartId = 'attendance-chart-' . Str::random(8);
+        }
+        
+        return $this->chartId;
     }
 }
