@@ -58,11 +58,9 @@ class AdminPanelProvider extends PanelProvider
                 ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                // Widgets\AccountWidget::class,
-                // Widgets\FilamentInfoWidget::class,
-                \App\Filament\Widgets\DashboardStats::class,      // Use App namespace
-                // \App\Filament\Widgets\AttendanceChartWidget::class,   // Use App namespace
-                // \App\Filament\Widgets\SalaryChartWidget::class,     // Use App namespace
+                
+                // \App\Filament\Widgets\DashboardStats::class,      // Use App namespace
+                
             
             ])
             ->middleware([

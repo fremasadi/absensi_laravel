@@ -11,17 +11,17 @@ class Dashboard extends BaseDashboard
     protected function getHeaderWidgets(): array
     {
         return [
-            \App\Filament\Widgets\DashboardStats::class,
+            // \App\Filament\Widgets\DashboardStats::class,
             // \App\Filament\Widgets\AttendanceChartWidget::class,
-            // \App\Filament\Widgets\SalaryChartWidget::class,
+
         ];
     }
 
     protected function getFooterWidgets(): array
     {
         return [
-            // \App\Filament\Widgets\LatestAttendanceWidget::class,
-            // \App\Filament\Widgets\PayrollWidget::class,
+            \App\Filament\Widgets\AttendanceChartWidget::class,
+
         ];
     }
 }
