@@ -20,6 +20,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Resources\BarcodeScannerPageResource;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
+use Filament\Support\Assets\Js;
 
 
 class AdminPanelProvider extends PanelProvider
