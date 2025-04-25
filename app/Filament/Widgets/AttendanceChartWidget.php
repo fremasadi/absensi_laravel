@@ -25,8 +25,8 @@ class AttendanceChartWidget extends ChartWidget
     
     public function mount(): void
     {
-        $this->selectedMonth = now()->format('m');
-        $this->selectedYear = now()->format('Y');
+        $this->selectedMonth = now()->format('m'); // default to current month
+        $this->selectedYear = now()->format('Y'); // default to current year
         $this->selectedUsers = User::pluck('id')->toArray(); // Default: select all users
     }
     
@@ -140,7 +140,7 @@ class AttendanceChartWidget extends ChartWidget
     
     protected function getType(): string
     {
-        return 'bar';
+        return 'bar'; // or 'line' if you prefer a line chart
     }
     
     protected function getOptions(): array
@@ -174,4 +174,5 @@ class AttendanceChartWidget extends ChartWidget
             ],
         ];
     }
+    
 }
