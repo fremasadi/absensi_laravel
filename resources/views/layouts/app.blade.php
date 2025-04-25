@@ -36,7 +36,4 @@
 
     </body>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/js/chart-fix.js"></script>
-    @livewireScripts
-    @filamentScripts
 </html>
