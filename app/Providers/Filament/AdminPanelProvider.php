@@ -20,7 +20,6 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Resources\BarcodeScannerPageResource;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
-use Filament\Support\Assets\Js;
 
 
 class AdminPanelProvider extends PanelProvider
@@ -45,9 +44,6 @@ class AdminPanelProvider extends PanelProvider
     {
         return $panel
             ->default()
-            ->assets([
-                Js::make('alpine-extension', 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js'),
-            ])
             ->id('admin')
             ->path('admin')
             ->login()
