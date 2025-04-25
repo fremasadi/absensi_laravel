@@ -21,6 +21,8 @@ class AttendanceChartWidget extends ChartWidget
     public ?int $selectedYear = null;
     public ?array $selectedUsers = null;
     
+    protected static ?string $pollingInterval = null;
+    
     public function mount(): void
     {
         $this->selectedMonth = now()->format('m');
@@ -139,5 +141,37 @@ class AttendanceChartWidget extends ChartWidget
     protected function getType(): string
     {
         return 'bar';
+    }
+    
+    protected function getOptions(): array
+    {
+        return [
+            'responsive' => true,
+            'maintainAspectRatio' => false,
+            'scales' => [
+                'y' => [
+                    'beginAtZero' => true,
+                    'title' => [
+                        'display' => true,
+                        'text' => 'Jam Kehadiran'
+                    ]
+                ],
+                'x' => [
+                    'title' => [
+                        'display' => true,
+                        'text' => 'Tanggal'
+                    ]
+                ]
+            ],
+            'plugins' => [
+                'legend' => [
+                    'display' => true,
+                    'position' => 'top',
+                ],
+                'tooltip' => [
+                    'enabled' => true,
+                ]
+            ],
+        ];
     }
 }
