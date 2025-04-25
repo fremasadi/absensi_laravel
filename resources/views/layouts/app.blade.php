@@ -35,7 +35,4 @@
         @yield('scripts') <!-- Ini adalah tempat untuk skrip yang ditulis di view -->
 
     </body>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="module" src="./app.js"></script>
-    <script src="//unpkg.com/alpinejs" defer></script>
 </html>
