@@ -15,9 +15,10 @@ class Dashboard extends BaseDashboard
         ];
     }
 
-    protected function getFooter(): ?\Illuminate\View\View
-    {
-        // Inject Chart.js ke footer HTML
-        return view('filament.custom-chart-js');
-    }
+    public function getFooter(): ?\Illuminate\View\View
+{
+    // Inject Chart.js ke footer HTML
+    return view('filament.custom-chart-js');
+}
+
 }
