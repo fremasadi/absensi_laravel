@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class AttendanceChartWidget extends ChartWidget
 {
-    protected static ?string $heading = 'Jam Kehadiran Karyawan per Bulan';
+    protected static ?string $heading = 'Total Jam Kehadiran Karyawan per Bulan';
     
     protected int | string | array $columnSpan = 'full';
     
@@ -72,75 +72,51 @@ class AttendanceChartWidget extends ChartWidget
         $startDate = Carbon::createFromDate($this->selectedYear, $this->selectedMonth, 1)->startOfMonth();
         $endDate = Carbon::createFromDate($this->selectedYear, $this->selectedMonth, 1)->endOfMonth();
         
-        // Get all days in month for labels
-        $period = $startDate->daysUntil($endDate);
-        $labels = [];
-        foreach ($period as $date) {
-            $labels[] = $date->format('d M');
-        }
+        // Get month name for title
+        $monthName = Carbon::createFromDate($this->selectedYear, $this->selectedMonth, 1)->format('F Y');
         
         // Get attendance data for selected users and month
-        $attendanceData = Absensi::select(
-                'id_user',
-                'tanggal_absen',
-                'durasi_hadir'
-            )
+        $attendanceData = Absensi::selectRaw('id_user, SUM(durasi_hadir) as total_durasi')
             ->whereIn('id_user', $this->selectedUsers)
             ->whereBetween('tanggal_absen', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->groupBy('id_user')
             ->get();
 
-        // Organize data by user and date
-        $dataByUser = [];
-        
-        // Prepare data structure for each user
-        foreach ($this->selectedUsers as $userId) {
-            $userData = [];
-            foreach ($period as $date) {
-                $userData[$date->format('Y-m-d')] = 0;
-            }
-            $dataByUser[$userId] = $userData;
-        }
-        
-        // Fill data from attendance records
-        foreach ($attendanceData as $record) {
-            $userId = $record->id_user;
-            $date = $record->tanggal_absen;
-            
-            // Add hours for the day (durasi_hadir is stored in minutes, convert to hours)
-            if (isset($dataByUser[$userId][$date])) {
-                $dataByUser[$userId][$date] = $record->durasi_hadir / 60; // Convert to hours
-            }
-        }
-        
         // Get user names for labels
         $userNames = User::whereIn('id', $this->selectedUsers)->pluck('name', 'id')->toArray();
         
-        // Prepare chart datasets
-        $datasets = [];
-        $colors = ['#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8AC249'];
+        // Prepare data
+        $labels = [];
+        $data = [];
         
-        $colorIndex = 0;
-        foreach ($dataByUser as $userId => $userData) {
-            $color = $colors[$colorIndex % count($colors)];
-            $colorIndex++;
+        foreach ($attendanceData as $record) {
+            $userId = $record->id_user;
+            // Convert total_durasi from minutes to hours and round to 1 decimal place
+            $hoursPresent = round($record->total_durasi / 60, 1);
             
-            $datasets[] = [
-                'label' => $userNames[$userId] ?? "User $userId",
-                'data' => array_values($userData),
-                'backgroundColor' => $color,
-                'borderColor' => $color,
-            ];
+            // Use user name as label
+            $labels[] = $userNames[$userId] ?? "User $userId";
+            $data[] = $hoursPresent;
         }
+
+        // Color for the bars - single color for cleaner look
+        $backgroundColor = '#36A2EB';
         
         return [
-            'datasets' => $datasets,
+            'datasets' => [
+                [
+                    'label' => "Total Jam Kehadiran ($monthName)",
+                    'data' => $data,
+                    'backgroundColor' => $backgroundColor,
+                ]
+            ],
             'labels' => $labels,
         ];
     }
     
     protected function getType(): string
     {
-        return 'bar'; // or 'line' if you prefer a line chart
+        return 'bar'; // Diagram batang standar
     }
     
     protected function getOptions(): array
@@ -153,13 +129,13 @@ class AttendanceChartWidget extends ChartWidget
                     'beginAtZero' => true,
                     'title' => [
                         'display' => true,
-                        'text' => 'Jam Kehadiran'
+                        'text' => 'Total Jam Kehadiran'
                     ]
                 ],
                 'x' => [
                     'title' => [
                         'display' => true,
-                        'text' => 'Tanggal'
+                        'text' => 'Karyawan'
                     ]
                 ]
             ],
@@ -169,10 +145,11 @@ class AttendanceChartWidget extends ChartWidget
                     'position' => 'top',
                 ],
                 'tooltip' => [
-                    'enabled' => true,
+                    'callbacks' => [
+                        'label' => "function(context) { return context.raw + ' jam'; }"
+                    ]
                 ]
             ],
         ];
     }
-    
 }
