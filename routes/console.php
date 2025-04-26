@@ -11,6 +11,24 @@ use Illuminate\Support\Facades\Log;
 function checkMissingAttendance($output = null) {
     $today = Carbon::today();
     
+    // Get approved leaves for today
+    $approvedLeaves = PermintaanIzin::where('status', true)
+        ->whereDate('tanggal', $today)
+        ->with('user')
+        ->get();
+
+    // Process leaves first
+    foreach ($approvedLeaves as $leave) {
+        $absensi = Absensi::where('id_user', $leave->user_id)
+            ->where('tanggal_absen', $today)
+            ->first();
+
+        if (!$absensi) {
+            (new PermintaanIzinObserver())->createAttendanceForApprovedLeave($leave);
+        }
+    }
+
+    // Then process regular shifts
     $activeShifts = JadwalShift::where('status', 1)
         ->whereHas('shift', function($query) use ($today) {
             $query->whereTime('end_time', '<=', Carbon::now()->toTimeString());
@@ -19,6 +37,12 @@ function checkMissingAttendance($output = null) {
         ->get();
 
     foreach ($activeShifts as $jadwal) {
+        // Skip if user has approved leave
+        $hasApprovedLeave = $approvedLeaves->contains('user_id', $jadwal->id_user);
+        if ($hasApprovedLeave) {
+            continue;
+        }
+
         $absensi = Absensi::where('id_user', $jadwal->id_user)
             ->where('tanggal_absen', $today)
             ->first();
