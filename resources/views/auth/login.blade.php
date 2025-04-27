@@ -1,6 +1,6 @@
 <x-guest-layout>
-    <div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-        <div class="w-full max-w-sm bg-white rounded-lg shadow-md p-6">
+    <div class="min-h-screen flex items-center justify-center bg-white px-4">
+        <div class="w-full max-w-sm bg-white rounded-lg">
             <!-- Logo -->
             <div class="flex justify-center mb-6">
                 <img src="{{ asset('images/logo.png') }}" alt="Logo" class="h-16">
