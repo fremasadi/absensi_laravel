@@ -1,8 +1,8 @@
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
     <!-- Sidebar Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('dashboard') }}">
-        <div class="sidebar-brand-text mx-3">TokoKita</div>
-    </a>
+    <a class="sidebar-brand d-flex align-items-center justify-content-left" href="{{ route('dashboard') }}">
+        <img src="{{ asset('images/logo2.png') }}" alt="Logo" class="sidebar-brand-logo" style="height: 30px;">
+    </a>    
 
     <!-- Divider -->
     <hr class="sidebar-divider my-0">

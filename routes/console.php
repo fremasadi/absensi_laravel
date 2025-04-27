@@ -104,10 +104,10 @@ Artisan::command('attendance:check-missing', function () {
 })->purpose('Check and fill missing attendance records');
 
 
-Artisan::command('salary:generate {user_id?}', function ($userId = null) {
+Artisan::command('salary:generate {user_id?} {--new : Generate untuk user baru saja}', function ($userId = null, $new = false) {
     try {
         // Tentukan fungsi helper di dalam scope command
-        $generateSalary = function ($user) {
+        $generateSalary = function ($user, $isNew = false) {
             $now = Carbon::now();
 
             // Ambil setting gaji default
@@ -118,13 +118,40 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
                 return;
             }
 
+            // Tentukan periode awal dan akhir untuk user baru
+            $periodeGaji = $settingGaji->periode_gaji;
+            
+            if ($isNew) {
+                // Untuk user baru, periode awal adalah hari ini
+                $periodeAwal = $now->copy()->startOfDay();
+                $periodeAkhir = $periodeAwal->copy()->addDays($periodeGaji - 1);
+                
+                $this->line("Membuat gaji untuk user baru: Periode awal = {$periodeAwal->format('Y-m-d')}, Periode akhir = {$periodeAkhir->format('Y-m-d')}");
+                
+                // Buat data gaji baru
+                $gajiId = \App\Models\Gaji::create([
+                    'user_id' => $user->id,
+                    'setting_gaji_id' => $settingGaji->id,
+                    'periode_awal' => $periodeAwal->toDateString(),
+                    'periode_akhir' => $periodeAkhir->toDateString(),
+                    'total_jam_kerja' => 0, // Mulai dengan 0
+                    'total_gaji' => 0, // Mulai dengan 0
+                    'status_pembayaran' => 'belum_dibayar',
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ])->id;
+                
+                $this->info("Gaji baru dibuat untuk user {$user->name} (ID: {$user->id}) dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
+                \Log::info("Gaji baru dibuat untuk user {$user->name} (ID: {$user->id}) dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
+                
+                return;
+            }
+            
+            // Kode asli untuk flow normal (non-user baru)
             // Cek apakah ada data gaji sebelumnya untuk user ini
             $gajiSebelumnya = \App\Models\Gaji::where('user_id', $user->id)
                 ->orderBy('periode_akhir', 'desc')
                 ->first();
-
-            // Tentukan periode awal dan akhir
-            $periodeGaji = $settingGaji->periode_gaji;
 
             // Flag untuk menentukan perlu membuat record baru atau tidak
             $buatRecordBaru = true;
@@ -274,24 +301,36 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
             }
         };
 
+        // Cek untuk opsi --new
+        $isNewUserGeneration = $this->option('new');
+
         if ($userId) {
             // Generate untuk satu user
             $user = \App\Models\User::find($userId);
             if ($user) {
-                $generateSalary($user);
-                $this->info("Gaji berhasil dihitung untuk user {$user->name}");
+                // Cek role jika user benar-benar role 'user'
+                if ($user->hasRole('user')) {
+                    $generateSalary($user, $isNewUserGeneration);
+                    $this->info("Gaji berhasil dihitung untuk user {$user->name}");
+                } else {
+                    $this->warn("User {$user->name} bukan role 'user', proses dilewati.");
+                }
             } else {
                 $this->error("User tidak ditemukan");
             }
         } else {
-            // Generate untuk semua user
-            $users = \App\Models\User::all();
+            // Query untuk mendapatkan semua user dengan role 'user'
+            $userQuery = \App\Models\User::whereHas('roles', function($q) {
+                $q->where('name', 'user');
+            });
+            
+            $users = $userQuery->get();
             $count = 0;
             
-            $this->info("Memulai perhitungan gaji untuk " . count($users) . " user...");
+            $this->info("Memulai perhitungan gaji untuk " . count($users) . " user dengan role 'user'...");
             
             foreach ($users as $user) {
-                $generateSalary($user);
+                $generateSalary($user, $isNewUserGeneration);
                 $count++;
                 
                 // Tampilkan progress
@@ -300,11 +339,11 @@ Artisan::command('salary:generate {user_id?}', function ($userId = null) {
                 }
             }
             
-            $this->info("Gaji berhasil dihitung untuk {$count} user");
+            $this->info("Gaji berhasil dihitung untuk {$count} user dengan role 'user'");
         }
     } catch (\Exception $e) {
         $this->error("Error: " . $e->getMessage());
         \Log::error("Error saat generate gaji: " . $e->getMessage());
         \Log::error($e->getTraceAsString());
     }
-})->purpose('Generate salary for users');
+})->purpose('Generate salary for users with role "user"');
