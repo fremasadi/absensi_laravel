@@ -48,9 +48,7 @@ class JadwalShiftResource extends Resource
                                 $q->where('status', 1);
                             });
                     }
-                )
-                ->emptyStateLabel('Semua user sudah punya jadwal shift'),
-
+                ),
                 Forms\Components\Select::make('id_shift')
                 ->label('Shift')
                 ->required()
