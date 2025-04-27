@@ -104,7 +104,7 @@ Artisan::command('attendance:check-missing', function () {
 })->purpose('Check and fill missing attendance records');
 
 
-Artisan::command('salary:generate {user_id?} {--new : Generate untuk user baru saja}', function ($userId = null, $new = false) {
+Artisan::command('salary:generate {user_id?} {--new : Generate untuk user baru saja}', function ($userId = null) {
     try {
         // Tentukan fungsi helper di dalam scope command
         $generateSalary = function ($user, $isNew = false) {
@@ -308,8 +308,8 @@ Artisan::command('salary:generate {user_id?} {--new : Generate untuk user baru s
             // Generate untuk satu user
             $user = \App\Models\User::find($userId);
             if ($user) {
-                // Cek role jika user benar-benar role 'user'
-                if ($user->hasRole('user')) {
+                // Cek role user - menggunakan kolom role (menyesuaikan dengan struktur database Anda)
+                if ($user->role === 'user') {
                     $generateSalary($user, $isNewUserGeneration);
                     $this->info("Gaji berhasil dihitung untuk user {$user->name}");
                 } else {
@@ -320,11 +320,9 @@ Artisan::command('salary:generate {user_id?} {--new : Generate untuk user baru s
             }
         } else {
             // Query untuk mendapatkan semua user dengan role 'user'
-            $userQuery = \App\Models\User::whereHas('roles', function($q) {
-                $q->where('name', 'user');
-            });
+            // Menyesuaikan dengan struktur database Anda
+            $users = \App\Models\User::where('role', 'user')->get();
             
-            $users = $userQuery->get();
             $count = 0;
             
             $this->info("Memulai perhitungan gaji untuk " . count($users) . " user dengan role 'user'...");
