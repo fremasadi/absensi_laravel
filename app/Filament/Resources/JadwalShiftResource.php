@@ -39,7 +39,16 @@ class JadwalShiftResource extends Resource
                 Forms\Components\Select::make('id_user')
                 ->label('User')
                 ->required()
-                ->relationship('user', 'name'),
+                ->relationship(
+                    'user',
+                    'name',
+                    function ($query) {
+                        $query->where('role', 'user')
+                            ->whereDoesntHave('jadwalShifts', function ($q) {
+                                $q->where('status', 1); // Jadwal aktif
+                            });
+                    }
+                ),
                 Forms\Components\Select::make('id_shift')
                 ->label('Shift')
                 ->required()
