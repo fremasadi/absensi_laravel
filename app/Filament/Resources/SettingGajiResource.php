@@ -61,14 +61,14 @@ class SettingGajiResource extends Resource
                 Tables\Columns\TextColumn::make('periode_gaji')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                // Tables\Columns\TextColumn::make('created_at')
+                //     ->dateTime()
+                //     ->sortable()
+                //     ->toggleable(isToggledHiddenByDefault: true),
+                // Tables\Columns\TextColumn::make('updated_at')
+                //     ->dateTime()
+                //     ->sortable()
+                //     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
@@ -78,7 +78,7 @@ class SettingGajiResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -94,7 +94,7 @@ class SettingGajiResource extends Resource
     {
         return [
             'index' => Pages\ListSettingGajis::route('/'),
-            'create' => Pages\CreateSettingGaji::route('/create'),
+            // 'create' => Pages\CreateSettingGaji::route('/create'),
             'edit' => Pages\EditSettingGaji::route('/{record}/edit'),
         ];
     }
