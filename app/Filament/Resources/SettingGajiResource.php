@@ -35,9 +35,9 @@ class SettingGajiResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
+                // Forms\Components\TextInput::make('name')
+                //     ->required()
+                //     ->maxLength(255),
                 Forms\Components\TextInput::make('gaji_per_jam')
                     ->required()
                     ->numeric()
@@ -53,8 +53,8 @@ class SettingGajiResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                // Tables\Columns\TextColumn::make('name')
+                //     ->searchable(),
                 Tables\Columns\TextColumn::make('gaji_per_jam')
                     ->numeric()
                     ->sortable(),
