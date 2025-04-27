@@ -44,9 +44,7 @@ class JadwalShiftResource extends Resource
                     'name',
                     function ($query) {
                         $query->where('role', 'user')
-                            ->whereDoesntHave('jadwalShifts', function ($q) {
-                                $q->where('status', 1);
-                            });
+                            ->whereDoesntHave('jadwalShifts'); // ⬅️ cukup ini saja, tidak perlu filter status
                     }
                 ),
                 Forms\Components\Select::make('id_shift')
