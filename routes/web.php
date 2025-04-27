@@ -14,7 +14,7 @@ Route::get('/riwayat-absensi', [RiwayatAbsensiController::class, 'index'])->name
 Route::post('/handle-scan', [AbsensiController::class, 'handleScan']);
 Route::post('/upload-selfie', [AbsensiController::class, 'uploadSelfie']);
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/login');  // Mengarahkan langsung ke halaman login
 });
 
 Route::get('/dashboard', function () {
