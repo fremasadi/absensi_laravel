@@ -45,10 +45,12 @@ class JadwalShiftResource extends Resource
                     function ($query) {
                         $query->where('role', 'user')
                             ->whereDoesntHave('jadwalShifts', function ($q) {
-                                $q->where('status', 1); // Jadwal aktif
+                                $q->where('status', 1);
                             });
                     }
-                ),
+                )
+                ->emptyStateLabel('Semua user sudah punya jadwal shift'),
+
                 Forms\Components\Select::make('id_shift')
                 ->label('Shift')
                 ->required()
