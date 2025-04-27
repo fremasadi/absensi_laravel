@@ -104,10 +104,10 @@ Artisan::command('attendance:check-missing', function () {
 })->purpose('Check and fill missing attendance records');
 
 
-Artisan::command('salary:generate {user_id?} {--new : Generate untuk user baru saja}', function ($userId = null) {
+Artisan::command('salary:generate {user_id?}', function ($userId = null) {
     try {
         // Tentukan fungsi helper di dalam scope command
-        $generateSalary = function ($user, $isNew = false) {
+        $generateSalary = function ($user) {
             $now = Carbon::now();
 
             // Ambil setting gaji default
@@ -118,15 +118,21 @@ Artisan::command('salary:generate {user_id?} {--new : Generate untuk user baru s
                 return;
             }
 
-            // Tentukan periode awal dan akhir untuk user baru
+            // Cek apakah user sudah memiliki data gaji
+            $gajiSebelumnya = \App\Models\Gaji::where('user_id', $user->id)
+                ->orderBy('periode_akhir', 'desc')
+                ->first();
+
+            // Tentukan periode gaji dari setting
             $periodeGaji = $settingGaji->periode_gaji;
             
-            if ($isNew) {
+            // Jika user belum pernah memiliki data gaji, buat dengan periode awal hari ini
+            if (!$gajiSebelumnya) {
                 // Untuk user baru, periode awal adalah hari ini
                 $periodeAwal = $now->copy()->startOfDay();
                 $periodeAkhir = $periodeAwal->copy()->addDays($periodeGaji - 1);
                 
-                $this->line("Membuat gaji untuk user baru: Periode awal = {$periodeAwal->format('Y-m-d')}, Periode akhir = {$periodeAkhir->format('Y-m-d')}");
+                $this->line("Membuat gaji baru untuk user {$user->name}: Periode awal = {$periodeAwal->format('Y-m-d')}, Periode akhir = {$periodeAkhir->format('Y-m-d')}");
                 
                 // Buat data gaji baru
                 $gajiId = \App\Models\Gaji::create([
@@ -141,140 +147,8 @@ Artisan::command('salary:generate {user_id?} {--new : Generate untuk user baru s
                     'updated_at' => $now
                 ])->id;
                 
-                $this->info("Gaji baru dibuat untuk user {$user->name} (ID: {$user->id}) dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
-                \Log::info("Gaji baru dibuat untuk user {$user->name} (ID: {$user->id}) dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
-                
-                return;
-            }
-            
-            // Kode asli untuk flow normal (non-user baru)
-            // Cek apakah ada data gaji sebelumnya untuk user ini
-            $gajiSebelumnya = \App\Models\Gaji::where('user_id', $user->id)
-                ->orderBy('periode_akhir', 'desc')
-                ->first();
-
-            // Flag untuk menentukan perlu membuat record baru atau tidak
-            $buatRecordBaru = true;
-
-            if ($gajiSebelumnya) {
-                $gajiPeriodeAkhir = Carbon::parse($gajiSebelumnya->periode_akhir)->startOfDay();
-                
-                // Jika periode terakhir belum berakhir (masih di hari yang sama atau lebih baru dari hari ini)
-                if ($gajiPeriodeAkhir->greaterThanOrEqualTo($now->copy()->startOfDay())) {
-                    $buatRecordBaru = false;
-                    
-                    // Periksa apakah setting gaji sudah berubah dari yang terakhir diaplikasikan
-                    $gajiSetting = \App\Models\SettingGaji::find($gajiSebelumnya->setting_gaji_id);
-                    
-                    // Apakah periode gaji berubah? Jika ya, perpanjang periode akhir
-                    if ($gajiSetting && $gajiSetting->periode_gaji != $settingGaji->periode_gaji) {
-                        // Hitung periode akhir baru berdasarkan periode awal yang sama
-                        $periodeAwalAsli = Carbon::parse($gajiSebelumnya->periode_awal)->startOfDay();
-                        $periodeAkhirBaru = $periodeAwalAsli->copy()->addDays($settingGaji->periode_gaji - 1);
-                        
-                        // Update periode akhir gaji
-                        $gajiSebelumnya->periode_akhir = $periodeAkhirBaru->toDateString();
-                        
-                        $this->line("Periode akhir gaji untuk user {$user->id} diperpanjang hingga {$periodeAkhirBaru->format('Y-m-d')}");
-                        \Log::info("Periode akhir gaji untuk user {$user->id} diperpanjang hingga {$periodeAkhirBaru->format('Y-m-d')}");
-                    }
-                    
-                    // Hitung total jam kerja berdasarkan absensi dalam periode ini
-                    $totalMenitKerja = \App\Models\Absensi::where('id_user', $user->id)
-                        ->whereBetween('tanggal_absen', [$gajiSebelumnya->periode_awal, $gajiSebelumnya->periode_akhir])
-                        ->sum('durasi_hadir');
-
-                    // Konversi menit ke jam dengan format desimal (misalnya, 10 menit = 0.17 jam)
-                    $totalJamKerja = round($totalMenitKerja / 60, 2); // Dibulatkan ke 2 angka desimal
-
-                    // Hitung total gaji dengan tarif terbaru
-                    $totalGaji = $totalJamKerja * $settingGaji->gaji_per_jam;
-
-                    // Update data gaji yang ada
-                    $gajiSebelumnya->update([
-                        'setting_gaji_id' => $settingGaji->id, // Update ke setting gaji terbaru
-                        'total_jam_kerja' => $totalJamKerja,
-                        'total_gaji' => $totalGaji,
-                        'updated_at' => $now
-                    ]);
-                    
-                    $this->line("Gaji diperbarui untuk user {$user->id} dengan total gaji Rp {$totalGaji} (tarif: Rp {$settingGaji->gaji_per_jam}/jam)");
-                    \Log::info("Gaji diperbarui untuk user {$user->id} dengan total gaji Rp {$totalGaji} (tarif: Rp {$settingGaji->gaji_per_jam}/jam)");
-                }
-                else {
-                    // Jika ada gaji sebelumnya dan sudah berakhir, maka periode awal yang baru adalah 
-                    // hari setelah periode akhir gaji sebelumnya
-                    $periodeAwal = $gajiPeriodeAkhir->copy()->addDay();
-                    $periodeAkhir = $periodeAwal->copy()->addDays($periodeGaji - 1);
-                    
-                    $this->line("Membuat gaji baru berdasarkan gaji sebelumnya: Periode awal = {$periodeAwal->format('Y-m-d')}, Periode akhir = {$periodeAkhir->format('Y-m-d')}");
-                    
-                    // Buat data gaji baru dengan nilai awal 0
-                    $gajiId = \App\Models\Gaji::create([
-                        'user_id' => $user->id,
-                        'setting_gaji_id' => $settingGaji->id,
-                        'periode_awal' => $periodeAwal->toDateString(),
-                        'periode_akhir' => $periodeAkhir->toDateString(),
-                        'total_jam_kerja' => 0, // Mulai dengan 0
-                        'total_gaji' => 0, // Mulai dengan 0
-                        'status_pembayaran' => 'belum_dibayar',
-                        'created_at' => $now,
-                        'updated_at' => $now
-                    ])->id;
-                    
-                    $this->line("Gaji baru dibuat untuk user {$user->id} dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
-                    \Log::info("Gaji baru dibuat untuk user {$user->id} dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
-                    
-                    // Setelah membuat record dengan nilai 0, baru update nilainya jika ada absensi
-                    $totalMenitKerja = \App\Models\Absensi::where('id_user', $user->id)
-                        ->whereBetween('tanggal_absen', [$periodeAwal->toDateString(), $periodeAkhir->toDateString()])
-                        ->sum('durasi_hadir');
-
-                    // Konversi menit ke jam dengan format desimal
-                    $totalJamKerja = round($totalMenitKerja / 60, 2); // Dibulatkan ke 2 angka desimal
-                    
-                    if ($totalJamKerja > 0) {
-                        // Hitung total gaji berdasarkan jam kerja
-                        $totalGaji = $totalJamKerja * $settingGaji->gaji_per_jam;
-                        
-                        // Update record yang baru dibuat
-                        \App\Models\Gaji::where('id', $gajiId)->update([
-                            'total_jam_kerja' => $totalJamKerja,
-                            'total_gaji' => $totalGaji,
-                            'updated_at' => $now
-                        ]);
-                        
-                        $this->line("Gaji user {$user->id} diupdate dengan data absensi: total jam: {$totalJamKerja}, total gaji: Rp {$totalGaji}");
-                        \Log::info("Gaji user {$user->id} diupdate dengan data absensi: total jam: {$totalJamKerja}, total gaji: Rp {$totalGaji}");
-                    }
-                    
-                    $buatRecordBaru = false; // Tandai bahwa record baru sudah dibuat
-                }
-            }
-
-            // Jika tidak ada gaji sebelumnya atau perlu membuat record baru
-            if ($buatRecordBaru) {
-                // Jika tidak ada gaji sebelumnya, tentukan periode awal sebagai tanggal saat ini - periode gaji
-                $periodeAwal = $now->copy()->startOfDay()->subDays($periodeGaji - 1);
-                $periodeAkhir = $now->copy()->startOfDay();
-                
-                $this->line("Membuat gaji pertama kali: Periode awal = {$periodeAwal->format('Y-m-d')}, Periode akhir = {$periodeAkhir->format('Y-m-d')}");
-                
-                // Buat data gaji baru dengan nilai awal 0
-                $gajiId = \App\Models\Gaji::create([
-                    'user_id' => $user->id,
-                    'setting_gaji_id' => $settingGaji->id,
-                    'periode_awal' => $periodeAwal->toDateString(),
-                    'periode_akhir' => $periodeAkhir->toDateString(),
-                    'total_jam_kerja' => 0, // Mulai dengan 0
-                    'total_gaji' => 0, // Mulai dengan 0
-                    'status_pembayaran' => 'belum_dibayar',
-                    'created_at' => $now,
-                    'updated_at' => $now
-                ])->id;
-                
-                $this->line("Gaji pertama dibuat untuk user {$user->id} dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
-                \Log::info("Gaji pertama dibuat untuk user {$user->id} dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
+                $this->info("Gaji pertama dibuat untuk user {$user->name} (ID: {$user->id}) dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
+                \Log::info("Gaji pertama dibuat untuk user {$user->name} (ID: {$user->id}) dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
                 
                 // Setelah membuat record dengan nilai 0, baru update nilainya jika ada absensi
                 $totalMenitKerja = \App\Models\Absensi::where('id_user', $user->id)
@@ -295,14 +169,106 @@ Artisan::command('salary:generate {user_id?} {--new : Generate untuk user baru s
                         'updated_at' => $now
                     ]);
                     
-                    $this->line("Gaji user {$user->id} diupdate dengan data absensi: total jam: {$totalJamKerja}, total gaji: Rp {$totalGaji}");
-                    \Log::info("Gaji user {$user->id} diupdate dengan data absensi: total jam: {$totalJamKerja}, total gaji: Rp {$totalGaji}");
+                    $this->line("Gaji user {$user->name} diupdate dengan data absensi: total jam: {$totalJamKerja}, total gaji: Rp {$totalGaji}");
+                    \Log::info("Gaji user {$user->name} diupdate dengan data absensi: total jam: {$totalJamKerja}, total gaji: Rp {$totalGaji}");
+                }
+                
+                return; // Keluar dari fungsi karena sudah selesai membuat gaji baru
+            }
+            
+            // Jika kode sampai di sini, berarti user sudah memiliki data gaji sebelumnya
+            // Jalankan logika normal untuk update gaji
+            
+            $gajiPeriodeAkhir = Carbon::parse($gajiSebelumnya->periode_akhir)->startOfDay();
+            
+            // Jika periode terakhir belum berakhir (masih di hari yang sama atau lebih baru dari hari ini)
+            if ($gajiPeriodeAkhir->greaterThanOrEqualTo($now->copy()->startOfDay())) {
+                // Periksa apakah setting gaji sudah berubah dari yang terakhir diaplikasikan
+                $gajiSetting = \App\Models\SettingGaji::find($gajiSebelumnya->setting_gaji_id);
+                
+                // Apakah periode gaji berubah? Jika ya, perpanjang periode akhir
+                if ($gajiSetting && $gajiSetting->periode_gaji != $settingGaji->periode_gaji) {
+                    // Hitung periode akhir baru berdasarkan periode awal yang sama
+                    $periodeAwalAsli = Carbon::parse($gajiSebelumnya->periode_awal)->startOfDay();
+                    $periodeAkhirBaru = $periodeAwalAsli->copy()->addDays($settingGaji->periode_gaji - 1);
+                    
+                    // Update periode akhir gaji
+                    $gajiSebelumnya->periode_akhir = $periodeAkhirBaru->toDateString();
+                    
+                    $this->line("Periode akhir gaji untuk user {$user->name} diperpanjang hingga {$periodeAkhirBaru->format('Y-m-d')}");
+                    \Log::info("Periode akhir gaji untuk user {$user->name} diperpanjang hingga {$periodeAkhirBaru->format('Y-m-d')}");
+                }
+                
+                // Hitung total jam kerja berdasarkan absensi dalam periode ini
+                $totalMenitKerja = \App\Models\Absensi::where('id_user', $user->id)
+                    ->whereBetween('tanggal_absen', [$gajiSebelumnya->periode_awal, $gajiSebelumnya->periode_akhir])
+                    ->sum('durasi_hadir');
+
+                // Konversi menit ke jam dengan format desimal (misalnya, 10 menit = 0.17 jam)
+                $totalJamKerja = round($totalMenitKerja / 60, 2); // Dibulatkan ke 2 angka desimal
+
+                // Hitung total gaji dengan tarif terbaru
+                $totalGaji = $totalJamKerja * $settingGaji->gaji_per_jam;
+
+                // Update data gaji yang ada
+                $gajiSebelumnya->update([
+                    'setting_gaji_id' => $settingGaji->id, // Update ke setting gaji terbaru
+                    'total_jam_kerja' => $totalJamKerja,
+                    'total_gaji' => $totalGaji,
+                    'updated_at' => $now
+                ]);
+                
+                $this->line("Gaji diperbarui untuk user {$user->name} dengan total gaji Rp {$totalGaji} (tarif: Rp {$settingGaji->gaji_per_jam}/jam)");
+                \Log::info("Gaji diperbarui untuk user {$user->name} dengan total gaji Rp {$totalGaji} (tarif: Rp {$settingGaji->gaji_per_jam}/jam)");
+            }
+            else {
+                // Jika ada gaji sebelumnya dan sudah berakhir, maka periode awal yang baru adalah 
+                // hari setelah periode akhir gaji sebelumnya
+                $periodeAwal = $gajiPeriodeAkhir->copy()->addDay();
+                $periodeAkhir = $periodeAwal->copy()->addDays($periodeGaji - 1);
+                
+                $this->line("Membuat gaji baru berdasarkan gaji sebelumnya: Periode awal = {$periodeAwal->format('Y-m-d')}, Periode akhir = {$periodeAkhir->format('Y-m-d')}");
+                
+                // Buat data gaji baru dengan nilai awal 0
+                $gajiId = \App\Models\Gaji::create([
+                    'user_id' => $user->id,
+                    'setting_gaji_id' => $settingGaji->id,
+                    'periode_awal' => $periodeAwal->toDateString(),
+                    'periode_akhir' => $periodeAkhir->toDateString(),
+                    'total_jam_kerja' => 0, // Mulai dengan 0
+                    'total_gaji' => 0, // Mulai dengan 0
+                    'status_pembayaran' => 'belum_dibayar',
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ])->id;
+                
+                $this->line("Gaji baru dibuat untuk user {$user->name} dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
+                \Log::info("Gaji baru dibuat untuk user {$user->name} dengan periode {$periodeAwal->toDateString()} sampai {$periodeAkhir->toDateString()}");
+                
+                // Setelah membuat record dengan nilai 0, baru update nilainya jika ada absensi
+                $totalMenitKerja = \App\Models\Absensi::where('id_user', $user->id)
+                    ->whereBetween('tanggal_absen', [$periodeAwal->toDateString(), $periodeAkhir->toDateString()])
+                    ->sum('durasi_hadir');
+
+                // Konversi menit ke jam dengan format desimal
+                $totalJamKerja = round($totalMenitKerja / 60, 2); // Dibulatkan ke 2 angka desimal
+                
+                if ($totalJamKerja > 0) {
+                    // Hitung total gaji berdasarkan jam kerja
+                    $totalGaji = $totalJamKerja * $settingGaji->gaji_per_jam;
+                    
+                    // Update record yang baru dibuat
+                    \App\Models\Gaji::where('id', $gajiId)->update([
+                        'total_jam_kerja' => $totalJamKerja,
+                        'total_gaji' => $totalGaji,
+                        'updated_at' => $now
+                    ]);
+                    
+                    $this->line("Gaji user {$user->name} diupdate dengan data absensi: total jam: {$totalJamKerja}, total gaji: Rp {$totalGaji}");
+                    \Log::info("Gaji user {$user->name} diupdate dengan data absensi: total jam: {$totalJamKerja}, total gaji: Rp {$totalGaji}");
                 }
             }
         };
-
-        // Cek untuk opsi --new
-        $isNewUserGeneration = $this->option('new');
 
         if ($userId) {
             // Generate untuk satu user
@@ -310,7 +276,7 @@ Artisan::command('salary:generate {user_id?} {--new : Generate untuk user baru s
             if ($user) {
                 // Cek role user - menggunakan kolom role (menyesuaikan dengan struktur database Anda)
                 if ($user->role === 'user') {
-                    $generateSalary($user, $isNewUserGeneration);
+                    $generateSalary($user);
                     $this->info("Gaji berhasil dihitung untuk user {$user->name}");
                 } else {
                     $this->warn("User {$user->name} bukan role 'user', proses dilewati.");
@@ -328,7 +294,7 @@ Artisan::command('salary:generate {user_id?} {--new : Generate untuk user baru s
             $this->info("Memulai perhitungan gaji untuk " . count($users) . " user dengan role 'user'...");
             
             foreach ($users as $user) {
-                $generateSalary($user, $isNewUserGeneration);
+                $generateSalary($user);
                 $count++;
                 
                 // Tampilkan progress
