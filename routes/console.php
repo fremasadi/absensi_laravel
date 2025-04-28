@@ -14,7 +14,8 @@ function checkMissingAttendance($output = null) {
     
     // Get approved leaves for today
     $approvedLeaves = PermintaanIzin::where('status', true)
-        ->whereDate('tanggal', $today)
+        ->whereDate('tanggal_mulai', '<=', $today)
+        ->whereDate('tanggal_selesai', '>=', $today)
         ->with('user')
         ->get();
 
