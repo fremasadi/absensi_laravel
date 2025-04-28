@@ -6,6 +6,7 @@ use App\Models\JadwalShift;
 use App\Models\Absensi;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Models\PermintaanIzin; // ⬅️ Tambahkan ini
 
 // Fungsi untuk pengecekan absensi
 function checkMissingAttendance($output = null) {
