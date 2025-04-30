@@ -27,10 +27,9 @@ function checkMissingAttendance($output = null) {
 
         if (!$absensi) {
             // Create attendance record for approved leave
+            // Cari jadwal shift aktif (tanpa menggunakan expired_at)
             $shiftAktif = JadwalShift::where('id_user', $leave->user_id)
                 ->where('status', 1)
-                ->whereDate('created_at', '<=', $today)
-                ->whereDate('expired_at', '>=', $today)
                 ->first();
 
             if (!$shiftAktif) {
