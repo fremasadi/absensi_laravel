@@ -26,7 +26,40 @@ function checkMissingAttendance($output = null) {
             ->first();
 
         if (!$absensi) {
-            (new PermintaanIzinObserver())->createAttendanceForApprovedLeave($leave);
+            // Create attendance record for approved leave
+            $shiftAktif = JadwalShift::where('id_user', $leave->user_id)
+                ->where('status', 1)
+                ->whereDate('created_at', '<=', $today)
+                ->whereDate('expired_at', '>=', $today)
+                ->first();
+
+            if (!$shiftAktif) {
+                Log::warning("No active shift found for user_id: {$leave->user_id} on {$today->toDateString()}");
+                continue;
+            }
+
+            Absensi::updateOrCreate(
+                [
+                    'id_user' => $leave->user_id,
+                    'tanggal_absen' => $today->toDateString()
+                ],
+                [
+                    'id_jadwal' => $shiftAktif->id,
+                    'waktu_masuk_time' => null,
+                    'waktu_keluar_time' => null,
+                    'durasi_hadir' => 0,
+                    'status_kehadiran' => $leave->jenis_izin,
+                    'keterangan' => $leave->alasan,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now()
+                ]
+            );
+
+            $message = "Created attendance record for approved leave for user {$leave->user->name}";
+            Log::info($message);
+            if ($output) {
+                $output->info($message);
+            }
         }
     }
 
