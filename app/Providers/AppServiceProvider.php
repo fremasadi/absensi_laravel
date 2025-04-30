@@ -27,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
-        PermintaanIzin::observe(PermintaanIzinObserver::class);
+        // PermintaanIzin::observe(PermintaanIzinObserver::class);
         SettingGaji::observe(SettingGajiObserver::class);
         $this->app->register(FilamentApexChartsServiceProvider::class);
 
