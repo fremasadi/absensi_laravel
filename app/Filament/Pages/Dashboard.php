@@ -14,6 +14,9 @@ class Dashboard extends BaseDashboard
             \App\Filament\Widgets\AttendanceChartWidget::class,
         ];
     }
-
+    public static function getNavigationLabel(): string
+    {
+        return 'Beranda'; // Ganti dengan label yang kamu mau
+    }
 
 }
