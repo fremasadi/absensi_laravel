@@ -15,8 +15,19 @@ class Dashboard extends BaseDashboard
         ];
     }
     public static function getNavigationLabel(): string
-    {
-        return 'Beranda'; // Ganti dengan label yang kamu mau
-    }
+{
+    return 'Beranda'; // Ini label sidebar
+}
+
+public static function getNavigationIcon(): string
+{
+    return 'heroicon-o-home';
+}
+
+public static function getNavigationSort(): int
+{
+    return -1; // Supaya tampil paling atas
+}
+
 
 }
