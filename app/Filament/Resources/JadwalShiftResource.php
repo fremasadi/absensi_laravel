@@ -37,16 +37,19 @@ class JadwalShiftResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Select::make('id_user')
-                ->label('User')
-                ->required()
-                ->relationship(
-                    'user',
-                    'name',
-                    function ($query) {
-                        $query->where('role', 'user')
-                            ->whereDoesntHave('jadwalShifts'); // ⬅️ cukup ini saja, tidak perlu filter status
-                    }
-                ),
+                    ->label('User')
+                    ->required()
+                    ->relationship(
+                        'user',
+                        'name',
+                        function ($query, $get) {
+                            $query->where('role', 'user')
+                                ->where(function ($subQuery) use ($get) {
+                                    $subQuery->whereDoesntHave('jadwalShifts')
+                                        ->orWhere('id', $get('id_user')); // tampilkan juga user yang sedang diedit
+                                });
+                        }
+                    ),
                 Forms\Components\Select::make('id_shift')
                 ->label('Shift')
                 ->required()
