@@ -11,6 +11,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -19,6 +20,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Resources\BarcodeScannerPageResource;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
+use App\Filament\Pages\Dashboard; // pastikan ini custom dashboard kamu
 
 
 class AdminPanelProvider extends PanelProvider
@@ -51,12 +53,15 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Blue,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
-            // ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
+            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                \App\Filament\Pages\Dashboard\CustomDashboard::class,
+                Dashboard::class, // hanya satu dashboard
                 ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([                
+            ->widgets([
+                
+                // \App\Filament\Widgets\DashboardStats::class,      // Use App namespace
+                
             
             ])
             ->middleware([
