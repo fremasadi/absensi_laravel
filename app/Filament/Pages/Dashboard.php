@@ -9,9 +9,9 @@ class Dashboard extends BaseDashboard
     protected function getHeaderWidgets(): array
     {
         return [
-            \App\Filament\Widgets\DashboardStats::class,
-            \App\Filament\Widgets\EndanceChartWidget::class,
-            \App\Filament\Widgets\SalaryChartWidget::class,
+            // \App\Filament\Widgets\DashboardStats::class,
+            // \App\Filament\Widgets\EndanceChartWidget::class,
+            // \App\Filament\Widgets\SalaryChartWidget::class,
         ];
     }
 
