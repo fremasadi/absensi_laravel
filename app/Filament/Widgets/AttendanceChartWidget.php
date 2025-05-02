@@ -10,7 +10,7 @@ use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class EttendanceChartWidget extends ChartWidget
+class AttendanceChartWidget extends ChartWidget
 {
     protected static ?string $heading = 'Total Jam Kehadiran Karyawan per Bulan';
     
