@@ -8,6 +8,7 @@ use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\PermintaanIzinController;
 use App\Http\Controllers\RiwayatAbsensiController;
 use App\Http\Controllers\GajiController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/gaji/{id}/download', [GajiController::class, 'downloadSlipGaji'])->name('gaji.downloadSlipGaji');
 Route::get('/riwayat-absensi', [RiwayatAbsensiController::class, 'index'])->name('riwayat-absensi.index');
@@ -29,6 +30,9 @@ Route::middleware(['auth', EnsureRoleIsUser::class])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 });
 
 require __DIR__.'/auth.php';

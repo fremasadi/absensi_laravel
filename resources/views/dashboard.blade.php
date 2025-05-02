@@ -3,18 +3,39 @@
 @section('title', 'Dashboard')
 
 @section('content')
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
-    </div>
-    <div class="row">
-        <!-- Example Content -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header">Welcome!</div>
-                <div class="card-body">
-                    You are logged in as {{ auth()->user()->role }}.
-                </div>
-            </div>
+<div class="container">
+    <h1 class="mb-4">Dashboard Karyawan</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>Total Gaji Dibayarkan</h5>
+            <h3>Rp {{ number_format($totalGaji, 0, ',', '.') }}</h3>
         </div>
     </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5>Persentase Kehadiran</h5>
+            <div id="chart"></div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
+<!-- Tambahkan ApexCharts CDN -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    var options = {
+        chart: {
+            type: 'pie'
+        },
+        series: [{{ $persentaseKehadiran }}, {{ 100 - $persentaseKehadiran }}],
+        labels: ['Hadir', 'Tidak Hadir'],
+        colors: ['#28a745', '#dc3545']
+    };
+
+    var chart = new ApexCharts(document.querySelector("#chart"), options);
+    chart.render();
+</script>
 @endsection
