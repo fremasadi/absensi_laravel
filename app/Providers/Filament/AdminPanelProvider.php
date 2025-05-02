@@ -19,7 +19,6 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Resources\BarcodeScannerPageResource;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
-use App\Filament\Pages\Dashboard; // pastikan ini custom dashboard kamu
 
 
 class AdminPanelProvider extends PanelProvider
@@ -52,11 +51,11 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Blue,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
+            // ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                // Dashboard::class, // Pastikan hanya ini yang didaftarkan
+                \App\Filament\Pages\Dashboard\CustomDashboard::class,
                 ])
-            // ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([                
             
             ])
