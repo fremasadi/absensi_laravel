@@ -24,10 +24,6 @@ public static function getNavigationIcon(): string
     return 'heroicon-o-home';
 }
 
-public static function getNavigationSort(): int
-{
-    return -1; // Supaya tampil paling atas
-}
 
 
 }
