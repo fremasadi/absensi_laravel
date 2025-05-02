@@ -11,7 +11,7 @@ class Dashboard extends BaseDashboard
     protected function getHeaderWidgets(): array
     {
         return [
-            \App\Filament\Widgets\AttendanceChartWidget::class,
+            // \App\Filament\Widgets\AttendanceChartWidget::class,
         ];
     }
     public static function getNavigationLabel(): string
