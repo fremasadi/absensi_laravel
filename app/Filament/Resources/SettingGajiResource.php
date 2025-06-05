@@ -17,27 +17,15 @@ class SettingGajiResource extends Resource
 {
     protected static ?string $model = SettingGaji::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-currency-dollar';
-
-    protected static ?string $navigationLabel = 'Gaji Setting';
-
-    public static function getPluralModelLabel(): string
-    {
-        return 'Daftar Setting Gaji';
-    }
-
-    public static function getNavigationGroup(): ?string
-    {
-    return 'Manajemen Gaji';
-    }
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                // Forms\Components\TextInput::make('name')
-                //     ->required()
-                //     ->maxLength(255),
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
                 Forms\Components\TextInput::make('gaji_per_jam')
                     ->required()
                     ->numeric()
@@ -53,22 +41,22 @@ class SettingGajiResource extends Resource
     {
         return $table
             ->columns([
-                // Tables\Columns\TextColumn::make('name')
-                //     ->searchable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('gaji_per_jam')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('periode_gaji')
                     ->numeric()
                     ->sortable(),
-                // Tables\Columns\TextColumn::make('created_at')
-                //     ->dateTime()
-                //     ->sortable()
-                //     ->toggleable(isToggledHiddenByDefault: true),
-                // Tables\Columns\TextColumn::make('updated_at')
-                //     ->dateTime()
-                //     ->sortable()
-                //     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
@@ -78,7 +66,7 @@ class SettingGajiResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    // Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -94,7 +82,7 @@ class SettingGajiResource extends Resource
     {
         return [
             'index' => Pages\ListSettingGajis::route('/'),
-            // 'create' => Pages\CreateSettingGaji::route('/create'),
+            'create' => Pages\CreateSettingGaji::route('/create'),
             'edit' => Pages\EditSettingGaji::route('/{record}/edit'),
         ];
     }

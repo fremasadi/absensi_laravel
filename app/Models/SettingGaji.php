@@ -12,7 +12,6 @@ class SettingGaji extends Model
     // Tentukan kolom mana yang dapat diisi massal
     protected $fillable = [
         'name',
-        'user_id',
         'gaji_per_jam',
         'periode_gaji',
     ];
@@ -26,11 +25,6 @@ class SettingGaji extends Model
         'periode_gaji' => 'integer',  // memastikan periode_gaji sebagai integer
     ];
 
-    // Relasi dengan model User
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
 
     // Jika ada pengaturan default nilai untuk gaji per jam
     public static function boot()
