@@ -19,6 +19,18 @@ class SettingGajiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'Gaji Setting';
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'Setting Gaji';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+    return 'Manajemen Gaji';
+    }
+
     public static function form(Form $form): Form
     {
         return $form
