@@ -9,6 +9,8 @@
     <!-- SB Admin 2 CSS -->
     <link href="{{ asset('sb-admin-2/vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
     <link href="{{ asset('sb-admin-2/css/sb-admin-2.min.css') }}" rel="stylesheet" type="text/css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 </head>
 
 <body id="page-top">
