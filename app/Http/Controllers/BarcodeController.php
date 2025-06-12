@@ -72,15 +72,6 @@ class BarcodeController extends Controller
     $absensiStart = $shiftStart; // Tepat saat shift dimulai
     $absensiEnd = $shiftEnd;     // Tepat saat shift berakhir
 
-    // Cek apakah dalam rentang waktu shift
-    if ($now->lt($absensiStart)) {
-        $timeLeft = $now->diffInMinutes($absensiStart);
-        return view('barcode', [
-            'barcode' => null,
-            'message' => "Belum waktunya shift. Shift dimulai {$timeLeft} menit lagi pada {$absensiStart->format('H:i')}."
-        ]);
-    }
-
     if ($now->gt($absensiEnd)) {
         return view('barcode', [
             'barcode' => null,
