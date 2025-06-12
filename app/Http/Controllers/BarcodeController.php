@@ -68,17 +68,6 @@ class BarcodeController extends Controller
         $shiftEnd = $shiftEnd->addDay();
     }
 
-    // Window absensi: dari jam shift dimulai sampai shift berakhir
-    $absensiStart = $shiftStart; // Tepat saat shift dimulai
-    $absensiEnd = $shiftEnd;     // Tepat saat shift berakhir
-
-    if ($now->gt($absensiEnd)) {
-        return view('barcode', [
-            'barcode' => null,
-            'message' => "Shift telah berakhir pada {$absensiEnd->format('H:i')}."
-        ]);
-    }
-
     // Generate barcode jika dalam rentang waktu shift
     $barcodeData = $user->id . '|' . $shift->id . '|' . $now->format('Y-m-d H:i:s');
     $barcode = QrCode::size(200)->generate($barcodeData);
