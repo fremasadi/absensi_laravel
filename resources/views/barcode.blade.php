@@ -14,10 +14,23 @@
                 </div>
                 <div class="card-body text-center">
                     @if ($barcode)
+                        <!-- Informasi Shift -->
+                        @if(isset($shift))
+                        <div class="mb-4">
+                            <h5 class="text-primary">{{ $shiftName ?? $shift->name }}</h5>
+                            <p class="text-muted">
+                                Jam Kerja: {{ $shiftStart->format('H:i') }} - {{ $shiftEnd->format('H:i') }}
+                            </p>
+                        </div>
+                        @endif
+
                         <h5 class="mb-4">Scan Barcode Berikut:</h5>
                         <div class="mb-4">
-                            {!! $barcode !!} <!-- Pastikan ini tidak di-escape -->
+                            {!! $barcode !!}
                         </div>
+
+                        <!-- Pesan informasi shift -->
+                        <p class="text-info">{{ $message }}</p>
                     @else
                         <h5 class="text-danger">Tidak ada barcode yang tersedia.</h5>
                         <p>{{ $message ?? 'Tidak ada pesan.' }}</p>
@@ -27,4 +40,3 @@
         </div>
     </div>
 @endsection
-
