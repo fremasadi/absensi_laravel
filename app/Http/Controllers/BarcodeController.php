@@ -58,7 +58,7 @@ class BarcodeController extends Controller
 
         // Data shift
         $shift = $jadwal->shift;
-        $shiftName = $shift->name; // Ambil nama shift
+        $shiftName = $shift->name;
 
         // Buat waktu shift untuk hari ini
         $shiftStart = Carbon::createFromFormat('Y-m-d H:i:s', $today->format('Y-m-d') . ' ' . $shift->start_time);
@@ -69,17 +69,49 @@ class BarcodeController extends Controller
             $shiftEnd = $shiftEnd->addDay();
         }
 
-        // Generate barcode
+        // TAMBAHAN: Validasi apakah waktu sekarang dalam rentang shift
+        $isWithinShiftTime = $this->isWithinShiftTime($now, $shiftStart, $shiftEnd);
+        
+        if (!$isWithinShiftTime) {
+            return view('barcode', [
+                'barcode' => null,
+                'shift' => $shift,
+                'shiftName' => $shiftName,
+                'shiftStart' => $shiftStart,
+                'shiftEnd' => $shiftEnd,
+                'message' => "Barcode absensi hanya tersedia pada jam shift {$shiftName} ({$shiftStart->format('H:i')} - {$shiftEnd->format('H:i')}). Waktu sekarang: {$now->format('H:i')}"
+            ]);
+        }
+
+        // Generate barcode hanya jika dalam rentang waktu shift
         $barcodeData = $user->id . '|' . $shift->id . '|' . $now->format('Y-m-d H:i:s');
         $barcode = QrCode::size(200)->generate($barcodeData);
 
         return view('barcode', [
             'barcode' => $barcode,
-            'shift' => $shift, // Pass data shift ke view
-            'shiftName' => $shiftName, // Pass nama shift ke view
+            'shift' => $shift,
+            'shiftName' => $shiftName,
             'shiftStart' => $shiftStart,
             'shiftEnd' => $shiftEnd,
             'message' => "Barcode absensi untuk {$shiftName} ({$shiftStart->format('H:i')} - {$shiftEnd->format('H:i')})"
         ]);
+    }
+
+    /**
+     * Cek apakah waktu sekarang berada dalam rentang shift
+     */
+    private function isWithinShiftTime($currentTime, $shiftStart, $shiftEnd)
+    {
+        // Tambahkan toleransi waktu (misalnya 15 menit sebelum shift dimulai)
+        $toleranceMinutes = 15;
+        $shiftStartWithTolerance = $shiftStart->copy()->subMinutes($toleranceMinutes);
+        
+        // Jika shift tidak melewati tengah malam
+        if ($shiftEnd->gt($shiftStart)) {
+            return $currentTime->between($shiftStartWithTolerance, $shiftEnd);
+        }
+        
+        // Jika shift melewati tengah malam (contoh: 22:00 - 06:00)
+        return $currentTime->gte($shiftStartWithTolerance) || $currentTime->lte($shiftEnd);
     }
 }
