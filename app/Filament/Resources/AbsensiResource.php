@@ -115,16 +115,10 @@ class AbsensiResource extends Resource
             ->headerActions([
                 FilamentExportHeaderAction::make('export')
                     ->label('Export Excel')
-                    ->fileName(fn () => 'absensi_' . now()->format('Ymd_His'))
+                    ->fileName('absensi_' . now()->format('Ymd_His'))
                     ->formats(['xlsx', 'csv']),
             ])
 
-            ->bulkActions([
-                FilamentExportBulkAction::make('export-bulk')
-                    ->label('Export Terpilih')
-                    ->fileName(fn () => 'absensi_terpilih_' . now()->format('Ymd_His'))
-                    ->formats(['xlsx', 'csv']),
-            ])
             ->filters([
                 // Filter tanggal kustom
                 Filter::make('tanggal_absen')
