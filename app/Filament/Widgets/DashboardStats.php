@@ -39,7 +39,7 @@ class DashboardStats extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-o-user-group')
                 ->color('primary'),
 
-            Stat::make('Pengguna Saat Ini', $userCount)
+            Stat::make('Karyawan Saat Ini', $userCount)
                 ->descriptionIcon('heroicon-o-check-circle')
                 ->color('success'),
 
