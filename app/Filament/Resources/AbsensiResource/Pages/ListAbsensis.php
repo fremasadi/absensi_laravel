@@ -15,8 +15,14 @@ class ListAbsensis extends ListRecords
     {
         return [
             // Actions\CreateAction::make(),
-            ExportBulkAction::make()
 
         ];
     }
+
+    public function getTableBulkActions()
+{
+    return  [
+        ExportBulkAction::make()
+    ];
+}
 }
