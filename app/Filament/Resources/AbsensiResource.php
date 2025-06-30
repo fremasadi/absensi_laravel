@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Support\Facades\Storage;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
+use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
 
 class AbsensiResource extends Resource
 {
@@ -96,7 +98,7 @@ class AbsensiResource extends Resource
                     ->size(50, 50)
                     ->defaultImageUrl(asset('images/no_data.jpg'))
                     ->searchable(),
-                
+
                 Tables\Columns\ImageColumn::make('selfiekeluar')
                     ->size(50, 50)
                     ->defaultImageUrl(asset('images/no_data.jpg'))
@@ -109,6 +111,19 @@ class AbsensiResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->headerActions([
+                FilamentExportHeaderAction::make('export')
+                    ->label('Export Excel')
+                    ->fileName(fn () => 'absensi_' . now()->format('Ymd_His'))
+                    ->formats(['xlsx', 'csv']),
+            ])
+
+            ->bulkActions([
+                FilamentExportBulkAction::make('export-bulk')
+                    ->label('Export Terpilih')
+                    ->fileName(fn () => 'absensi_terpilih_' . now()->format('Ymd_His'))
+                    ->formats(['xlsx', 'csv']),
             ])
             ->filters([
                 // Filter tanggal kustom
@@ -142,7 +157,7 @@ class AbsensiResource extends Resource
                                 'message' => 'Tidak ada data selfie masuk'
                             ]);
                         }
-                        
+
                         return view('components.image-viewer', [
                             'imageUrl' => Storage::url($record->selfiemasuk), // Konversi ke URL Storage
                             'alt' => 'Selfie Masuk'
@@ -152,14 +167,14 @@ class AbsensiResource extends Resource
                         \Filament\Actions\Action::make('OK')
                             ->color('primary')
                             ->close(),
-                            
+
                         \Filament\Actions\Action::make('Buka di Tab Baru')
                             ->color('gray')
                             ->url(fn ($record) => Storage::url($record->selfiemasuk))
                             ->openUrlInNewTab()
                             ->hidden(fn ($record) => !$record->selfiemasuk),
                     ])
-                    ->visible(fn ($record) => $record->selfiemasuk),                    
+                    ->visible(fn ($record) => $record->selfiemasuk),
                 Tables\Actions\Action::make('lihatSelfiekeluar')
                     ->label('Lihat Selfie Keluar')
                     ->icon('heroicon-o-eye')
@@ -170,7 +185,7 @@ class AbsensiResource extends Resource
                                 'message' => 'Tidak ada data selfie keluar'
                             ]);
                         }
-                        
+
                         return view('components.image-viewer', [
                             'imageUrl' => Storage::url($record->selfiekeluar), // Konversi ke URL Storage
                             'alt' => 'Selfie Keluar'
@@ -180,14 +195,14 @@ class AbsensiResource extends Resource
                         \Filament\Actions\Action::make('OK')
                             ->color('primary')
                             ->close(),
-                            
+
                         \Filament\Actions\Action::make('Buka di Tab Baru')
                             ->color('gray')
                             ->url(fn ($record) => Storage::url($record->selfiekeluar))
                             ->openUrlInNewTab()
                             ->hidden(fn ($record) => !$record->selfiekeluar),
                     ])
-                    ->visible(fn ($record) => $record->selfiekeluar),            ])            
+                    ->visible(fn ($record) => $record->selfiekeluar),            ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     // Tables\Actions\DeleteBulkAction::make(),

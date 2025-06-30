@@ -74,6 +74,7 @@ class AbsensiController extends Controller
             ->first();
 
         if ($absensi) {
+
             // Jika sudah ada absensi hari ini
             if ($absensi->waktu_keluar_time) {
                 return response()->json([
