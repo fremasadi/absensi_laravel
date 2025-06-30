@@ -112,11 +112,6 @@ class AbsensiResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->headerActions([
-                ExportAction::make()
-                ->exporter(ProductExporter::class)
-            ])
-
             ->filters([
                 // Filter tanggal kustom
                 Filter::make('tanggal_absen')

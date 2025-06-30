@@ -5,6 +5,7 @@ namespace App\Filament\Resources\AbsensiResource\Pages;
 use App\Filament\Resources\AbsensiResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 
 class ListAbsensis extends ListRecords
 {
@@ -14,6 +15,8 @@ class ListAbsensis extends ListRecords
     {
         return [
             // Actions\CreateAction::make(),
+            ExportBulkAction::make()
+
         ];
     }
 }
