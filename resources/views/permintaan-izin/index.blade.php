@@ -20,7 +20,7 @@
                     {{ session('success') }}
                 </div>
             @endif
-            
+
             <div class="table-responsive">
                 <table class="table table-bordered" width="100%" cellspacing="0">
                     <thead>
@@ -58,16 +58,16 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('permintaan-izin.show', $izin) }}" class="btn btn-info btn-sm">
+                                <!-- <a href="{{ route('permintaan-izin.show', $izin) }}" class="btn btn-info btn-sm">
                                     <i class="fas fa-eye"></i>
-                                </a>
+                                </a> -->
 
                                 <!-- Tombol Edit dan Delete hanya muncul jika status false (pending) -->
                                 @if(!$izin->status)
     <a href="{{ route('permintaan-izin.edit', $izin) }}" class="btn btn-warning btn-sm">
         <i class="fas fa-edit"></i>
     </a>
-    
+
     <!-- Tombol Delete dengan SweetAlert2 -->
     <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('{{ route('permintaan-izin.destroy', $izin) }}', '{{ $izin->name ?? 'data ini' }}')">
         <i class="fas fa-trash"></i>
@@ -112,19 +112,19 @@
                 form.method = 'POST';
                 form.action = deleteUrl;
                 form.style.display = 'none';
-                
+
                 // CSRF Token
                 const csrfToken = document.createElement('input');
                 csrfToken.type = 'hidden';
                 csrfToken.name = '_token';
                 csrfToken.value = '{{ csrf_token() }}';
-                
+
                 // Method DELETE
                 const methodField = document.createElement('input');
                 methodField.type = 'hidden';
                 methodField.name = '_method';
                 methodField.value = 'DELETE';
-                
+
                 form.appendChild(csrfToken);
                 form.appendChild(methodField);
                 document.body.appendChild(form);
@@ -133,7 +133,7 @@
         });
     }
     </script>
-    
+
     <style>
     /* Custom Styling untuk SweetAlert2 agar mirip dengan gambar */
     .swal2-popup-custom {
@@ -141,7 +141,7 @@
         padding: 2rem !important;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
     }
-    
+
     .swal2-icon-custom {
         margin: 1rem auto 1.5rem !important;
         width: 80px !important;
@@ -150,25 +150,25 @@
         background-color: rgba(220, 53, 69, 0.1) !important;
         border-radius: 50% !important;
     }
-    
+
     .swal2-icon-custom .swal2-icon-content {
         color: #dc3545 !important;
         font-size: 2.5rem !important;
     }
-    
+
     .swal2-title-custom {
         font-size: 1.5rem !important;
         font-weight: 600 !important;
         color: #333 !important;
         margin-bottom: 0.5rem !important;
     }
-    
+
     .swal2-text-custom {
         color: #6c757d !important;
         font-size: 1rem !important;
         margin-bottom: 2rem !important;
     }
-    
+
     .swal2-confirm-custom {
         background-color: #dc3545 !important;
         color: white !important;
@@ -178,11 +178,11 @@
         font-weight: 500 !important;
         margin-left: 0.5rem !important;
     }
-    
+
     .swal2-confirm-custom:hover {
         background-color: #c82333 !important;
     }
-    
+
     .swal2-cancel-custom {
         background-color: #6c757d !important;
         color: white !important;
@@ -192,22 +192,22 @@
         font-weight: 500 !important;
         margin-right: 0.5rem !important;
     }
-    
+
     .swal2-cancel-custom:hover {
         background-color: #5a6268 !important;
     }
-    
+
     /* Override default SweetAlert2 styles */
     .swal2-popup {
         font-family: inherit !important;
     }
-    
+
     .swal2-actions {
         gap: 1rem !important;
         margin-top: 2rem !important;
     }
     </style>
-    
+
     <!-- ALTERNATIF: Jika ingin menggunakan ikon trash yang lebih mirip gambar -->
     <script>
     function confirmDeleteWithTrashIcon(deleteUrl, itemName = 'data ini') {
@@ -240,17 +240,17 @@
                 form.method = 'POST';
                 form.action = deleteUrl;
                 form.style.display = 'none';
-                
+
                 const csrfToken = document.createElement('input');
                 csrfToken.type = 'hidden';
                 csrfToken.name = '_token';
                 csrfToken.value = '{{ csrf_token() }}';
-                
+
                 const methodField = document.createElement('input');
                 methodField.type = 'hidden';
                 methodField.name = '_method';
                 methodField.value = 'DELETE';
-                
+
                 form.appendChild(csrfToken);
                 form.appendChild(methodField);
                 document.body.appendChild(form);

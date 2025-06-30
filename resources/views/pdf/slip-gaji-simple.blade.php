@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Tanda Terima Gaji</title>
+    <title>Rekap Kehadiran</title>
     <style>
         body {
             font-family: sans-serif;
