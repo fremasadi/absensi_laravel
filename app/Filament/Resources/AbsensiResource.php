@@ -17,6 +17,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Support\Facades\Storage;
 use App\Filament\Exports\ProductExporter;
 use Filament\Tables\Actions\ExportAction;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 
 class AbsensiResource extends Resource
 {
@@ -193,6 +194,8 @@ class AbsensiResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     // Tables\Actions\DeleteBulkAction::make(),
+                    ExportBulkAction::make()
+
                 ]),
             ]);
     }
