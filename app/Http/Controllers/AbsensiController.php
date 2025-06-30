@@ -57,17 +57,17 @@ class AbsensiController extends Controller
 
         if (!$now->between($shiftStartWithTolerance, $shiftEndWithTolerance)) {
             return response()->json([
-                'message' => 'Waktu scan di luar jadwal shift. Shift Anda: ' . 
+                'message' => 'Waktu scan di luar jadwal shift. Shift Anda: ' .
                 $shift->start_time . ' - ' . $shift->end_time
             ], 400);
         }
 
         // Proses menyimpan file selfie langsung ke storage/app
         $selfieFileName = 'selfie_' . $userId . '_' . $now->format('Ymd_His') . '.' . $selfieImage->getClientOriginalExtension();
-        
+
         // Simpan file ke storage/app/selfies (bukan di public)
         $selfiePath = $selfieImage->storeAs('selfies', $selfieFileName);
-        
+
         // Cari data absensi hari ini
         $absensi = Absensi::where('id_user', $userId)
             ->where('tanggal_absen', Carbon::today())
@@ -86,6 +86,12 @@ class AbsensiController extends Controller
             $waktuKeluar = Carbon::now();
             $durasiHadir = $waktuMasuk->diffInMinutes($waktuKeluar);
 
+            // Tambahkan validasi minimal 30 menit setelah waktu masuk
+            if ($waktuKeluar->diffInMinutes($waktuMasuk) < 30) {
+                return response()->json([
+                    'message' => 'Absensi keluar hanya bisa dilakukan minimal 30 menit setelah absensi masuk.'
+                ], 400);
+            }
             // Update waktu keluar dan durasi
             $absensi->update([
                 'waktu_keluar_time' => $waktuKeluar->toTimeString(),
@@ -141,7 +147,7 @@ class AbsensiController extends Controller
     {
         $hours = floor($minutes / 60);
         $remainingMinutes = $minutes % 60;
-        
+
         return sprintf('%02d jam %02d menit', $hours, $remainingMinutes);
     }
 }
