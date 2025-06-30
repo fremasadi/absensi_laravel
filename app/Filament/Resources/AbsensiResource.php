@@ -134,10 +134,6 @@ class AbsensiResource extends Resource
                             );
                     }),
             ])
-            ->headerActions([
-                ExportBulkAction::make()
-
-            ])
             ->actions([
                 Tables\Actions\Action::make('lihatSelfiemasuk')
                     ->label('Lihat Selfie Masuk')
@@ -203,6 +199,7 @@ class AbsensiResource extends Resource
                 ]),
             ]);
     }
+
 
 
     public static function getRelations(): array
