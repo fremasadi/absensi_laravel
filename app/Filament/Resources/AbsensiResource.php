@@ -15,8 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Support\Facades\Storage;
-use AlperenErsoy\FilamentExport\Actions\FilamentExportHeaderAction;
-use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
+use App\Filament\Exports\ProductExporter;
+use Filament\Tables\Actions\ExportAction;
 
 class AbsensiResource extends Resource
 {
@@ -113,10 +113,8 @@ class AbsensiResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->headerActions([
-                FilamentExportHeaderAction::make('export')
-                    ->label('Export Excel')
-                    ->fileName('absensi_' . now()->format('Ymd_His'))
-                    ->formats(['xlsx', 'csv']),
+                ExportAction::make()
+                ->exporter(ProductExporter::class)
             ])
 
             ->filters([
