@@ -46,15 +46,6 @@ class PermintaanIzinController extends Controller
         $data = $request->all();
         $data['user_id'] = Auth::id();
 
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = 'izin_' . Auth::id() . '_' . time() . '.' . $image->getClientOriginalExtension();
-            
-            // Simpan ke storage/app/public/izin-bukti
-            $path = $image->storeAs('izin-bukti', $imageName, 'public');
-            $data['image'] = 'izin-bukti/' . $imageName;
-        }
-
         PermintaanIzin::create($data);
 
         return redirect()->route('permintaan-izin.index')
