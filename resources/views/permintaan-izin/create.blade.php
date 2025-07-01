@@ -52,13 +52,13 @@
                     @enderror
                 </div>
 
-                <div class="form-group">
+                {{-- <div class="form-group">
                     <label>Bukti (Opsional)</label>
                     <input type="file" name="image" class="form-control @error('image') is-invalid @enderror">
                     @error('image')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                </div>
+                </div> --}}
 
                 <button type="submit" class="btn btn-primary">Simpan</button>
                 <a href="{{ route('permintaan-izin.index') }}" class="btn btn-secondary">Kembali</a>

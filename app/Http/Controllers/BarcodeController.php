@@ -7,6 +7,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Models\JadwalShift;
 use App\Models\Shift;
 use App\Models\PermintaanIzin;
+use App\Models\Absensi; // Tambahkan import model Absensi
 use Carbon\Carbon;
 
 class BarcodeController extends Controller
@@ -69,6 +70,37 @@ class BarcodeController extends Controller
             $shiftEnd = $shiftEnd->addDay();
         }
 
+        // CEK STATUS ABSENSI HARI INI
+        $absensiHariIni = Absensi::where('id_user', $user->id)
+            ->where('id_jadwal', $jadwal->id)
+            ->whereDate('tanggal', $today)
+            ->first();
+
+        // Tentukan jenis absensi (masuk/keluar) dan pesan
+        $jenisAbsensi = 'masuk'; // default
+        $titleBarcode = 'Barcode Absensi Masuk';
+        $pesanAbsensi = "Scan barcode untuk absensi masuk";
+
+        if ($absensiHariIni) {
+            if ($absensiHariIni->jam_masuk && !$absensiHariIni->jam_keluar) {
+                // Sudah absen masuk, belum absen keluar
+                $jenisAbsensi = 'keluar';
+                $titleBarcode = 'Barcode Absensi Keluar';
+                $pesanAbsensi = "Scan barcode untuk absensi keluar";
+            } elseif ($absensiHariIni->jam_masuk && $absensiHariIni->jam_keluar) {
+                // Sudah absen masuk dan keluar
+                return view('barcode', [
+                    'barcode' => null,
+                    'shift' => $shift,
+                    'shiftName' => $shiftName,
+                    'shiftStart' => $shiftStart,
+                    'shiftEnd' => $shiftEnd,
+                    'titleBarcode' => 'Absensi Selesai',
+                    'message' => "Anda sudah melakukan absensi masuk dan keluar untuk hari ini."
+                ]);
+            }
+        }
+
         // TAMBAHAN: Validasi apakah waktu sekarang dalam rentang shift
         $isWithinShiftTime = $this->isWithinShiftTime($now, $shiftStart, $shiftEnd);
         
@@ -79,12 +111,13 @@ class BarcodeController extends Controller
                 'shiftName' => $shiftName,
                 'shiftStart' => $shiftStart,
                 'shiftEnd' => $shiftEnd,
+                'titleBarcode' => $titleBarcode,
                 'message' => "Barcode absensi hanya tersedia pada jam shift {$shiftName} ({$shiftStart->format('H:i')} - {$shiftEnd->format('H:i')}). Waktu sekarang: {$now->format('H:i')}"
             ]);
         }
 
         // Generate barcode hanya jika dalam rentang waktu shift
-        $barcodeData = $user->id . '|' . $shift->id . '|' . $now->format('Y-m-d H:i:s');
+        $barcodeData = $user->id . '|' . $shift->id . '|' . $jenisAbsensi . '|' . $now->format('Y-m-d H:i:s');
         $barcode = QrCode::size(200)->generate($barcodeData);
 
         return view('barcode', [
@@ -93,7 +126,9 @@ class BarcodeController extends Controller
             'shiftName' => $shiftName,
             'shiftStart' => $shiftStart,
             'shiftEnd' => $shiftEnd,
-            'message' => "Barcode absensi untuk {$shiftName} ({$shiftStart->format('H:i')} - {$shiftEnd->format('H:i')})"
+            'titleBarcode' => $titleBarcode,
+            'jenisAbsensi' => $jenisAbsensi,
+            'message' => $pesanAbsensi . " - {$shiftName} ({$shiftStart->format('H:i')} - {$shiftEnd->format('H:i')})"
         ]);
     }
 

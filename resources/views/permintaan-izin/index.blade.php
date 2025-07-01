@@ -30,7 +30,7 @@
                             <th>Tanggal Mulai</th>
                             <th>Tanggal Selesai</th>
                             <th>Jenis Izin</th>
-                            {{-- <th>Status</th> --}}
+                            <th>Bukti</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -42,37 +42,50 @@
                             <td>{{ \Carbon\Carbon::parse($izin->tanggal_mulai)->format('d/m/Y') }}</td>
                             <td>{{ \Carbon\Carbon::parse($izin->tanggal_selesai)->format('d/m/Y') }}</td>
                             <td>{{ $izin->jenis_izin }}</td>
-                            {{-- <td>
-                                @if(auth()->user()->role === 'admin')
-                                <form action="{{ route('permintaan-izin.update-status', $izin) }}" method="POST">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="btn btn-sm {{ $izin->status ? 'btn-success' : 'btn-warning' }}">
-                                        {{ $izin->status ? 'Disetujui' : 'Pending' }}
-                                    </button>
-                                </form>
-                                @else
-                                    <span class="badge {{ $izin->status ? 'badge-success' : 'badge-warning' }}">
-                                        {{ $izin->status ? 'Disetujui' : 'Pending' }}
-                                    </span>
-                                @endif
-                            </td> --}}
                             <td>
-                                {{-- <!-- <a href="{{ route('permintaan-izin.show', $izin) }}" class="btn btn-info btn-sm"> --}}
-                                    {{-- <i class="fas fa-eye"></i> --}}
-                                {{-- </a> --> --}}
-
-                                <!-- Tombol Edit dan Delete hanya muncul jika status false (pending) -->
+                                @if($izin->image)
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge badge-success mr-2">
+                                            <i class="fas fa-check"></i> Ada Bukti
+                                        </span>
+                                        <button type="button" class="btn btn-info btn-sm" onclick="viewImage('{{ asset('storage/' . $izin->image) }}', '{{ $izin->jenis_izin }}')">
+                                            <i class="fas fa-eye"></i> Lihat
+                                        </button>
+                                    </div>
+                                @else
+                                    @php
+                                        $tanggalMulai = \Carbon\Carbon::parse($izin->tanggal_mulai);
+                                        $today = \Carbon\Carbon::today();
+                                        $canUpload = $today->gte($tanggalMulai) && $today->lte($tanggalMulai->copy()->addDays(3)); // bisa upload sampai 3 hari setelah tanggal mulai
+                                    @endphp
+                                    
+                                    @if($canUpload && auth()->user()->id == $izin->user_id)
+                                        <button type="button" class="btn btn-warning btn-sm" onclick="showUploadModal({{ $izin->id }}, '{{ $tanggalMulai->format('d/m/Y') }}')">
+                                            <i class="fas fa-upload"></i> Upload Bukti
+                                        </button>
+                                    @elseif($today->lt($tanggalMulai))
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-clock"></i> Belum Waktunya
+                                        </span>
+                                    @else
+                                        <span class="badge badge-danger">
+                                            <i class="fas fa-times"></i> Tidak Ada Bukti
+                                        </span>
+                                    @endif
+                                @endif
+                            </td>
+                            <td>
                                 @if(!$izin->status)
-    <a href="{{ route('permintaan-izin.edit', $izin) }}" class="btn btn-warning btn-sm">
-        <i class="fas fa-edit"></i>
-    </a>
+                                    <a href="{{ route('permintaan-izin.edit', $izin) }}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
 
-    <!-- Tombol Delete dengan SweetAlert2 -->
-    <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('{{ route('permintaan-izin.destroy', $izin) }}', '{{ $izin->name ?? 'data ini' }}')">
-        <i class="fas fa-trash"></i>
-    </button>
-@endif
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('{{ route('permintaan-izin.destroy', $izin) }}', '{{ $izin->jenis_izin }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                @else
+                                    <span class="badge badge-success">Disetujui</span>
+                                @endif
                             </td>
                         </tr>
                         @endforeach
@@ -81,9 +94,104 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Upload Bukti -->
+    <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">Upload Bukti Izin</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PATCH')
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="buktiFile">Pilih File Bukti</label>
+                            <input type="file" class="form-control-file" id="buktiFile" name="image" required accept="image/*">
+                            <small class="form-text text-muted">
+                                Format yang diizinkan: JPG, JPEG, PNG. Maksimal 2MB.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label>Tanggal Izin:</label>
+                            <span id="tanggalIzin" class="font-weight-bold text-primary"></span>
+                        </div>
+                        <div id="imagePreview" class="mt-3" style="display: none;">
+                            <label>Preview:</label>
+                            <br>
+                            <img id="previewImg" src="" alt="Preview" class="img-thumbnail" style="max-width: 200px;">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Upload Bukti
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal View Image -->
+    <div class="modal fade" id="viewImageModal" tabindex="-1" role="dialog" aria-labelledby="viewImageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewImageModalLabel">Bukti Izin</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="viewImg" src="" alt="Bukti Izin" class="img-fluid">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
+@section('scripts')
 <script>
+    // Preview image saat file dipilih
+    document.getElementById('buktiFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            document.getElementById('imagePreview').style.display = 'none';
+        }
+    });
+
+    // Fungsi untuk menampilkan modal upload
+    function showUploadModal(izinId, tanggalMulai) {
+        document.getElementById('uploadForm').action = `/permintaan-izin/${izinId}/upload-bukti`;
+        document.getElementById('tanggalIzin').textContent = tanggalMulai;
+        document.getElementById('imagePreview').style.display = 'none';
+        document.getElementById('buktiFile').value = '';
+        $('#uploadModal').modal('show');
+    }
+
+    // Fungsi untuk melihat gambar
+    function viewImage(imageSrc, jenisIzin) {
+        document.getElementById('viewImg').src = imageSrc;
+        document.getElementById('viewImageModalLabel').textContent = `Bukti ${jenisIzin}`;
+        $('#viewImageModal').modal('show');
+    }
+
+    // Fungsi konfirmasi delete
     function confirmDelete(deleteUrl, itemName = 'data ini') {
         Swal.fire({
             title: 'Hapus Data Ini',
@@ -107,19 +215,16 @@
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                // Buat form dan submit
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = deleteUrl;
                 form.style.display = 'none';
 
-                // CSRF Token
                 const csrfToken = document.createElement('input');
                 csrfToken.type = 'hidden';
                 csrfToken.name = '_token';
                 csrfToken.value = '{{ csrf_token() }}';
 
-                // Method DELETE
                 const methodField = document.createElement('input');
                 methodField.type = 'hidden';
                 methodField.name = '_method';
@@ -132,10 +237,12 @@
             }
         });
     }
-    </script>
+</script>
+@endsection
 
-    <style>
-    /* Custom Styling untuk SweetAlert2 agar mirip dengan gambar */
+@section('styles')
+<style>
+    /* Custom Styling untuk SweetAlert2 */
     .swal2-popup-custom {
         border-radius: 15px !important;
         padding: 2rem !important;
@@ -197,7 +304,6 @@
         background-color: #5a6268 !important;
     }
 
-    /* Override default SweetAlert2 styles */
     .swal2-popup {
         font-family: inherit !important;
     }
@@ -206,56 +312,15 @@
         gap: 1rem !important;
         margin-top: 2rem !important;
     }
-    </style>
 
-    <!-- ALTERNATIF: Jika ingin menggunakan ikon trash yang lebih mirip gambar -->
-    <script>
-    function confirmDeleteWithTrashIcon(deleteUrl, itemName = 'data ini') {
-        Swal.fire({
-            html: `
-                <div style="text-align: center;">
-                    <div style="display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; background-color: rgba(220, 53, 69, 0.1); border-radius: 50%; margin-bottom: 1rem;">
-                        <i class="fas fa-trash" style="font-size: 2.5rem; color: #dc3545;"></i>
-                    </div>
-                    <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: 600; color: #333;">Hapus User</h3>
-                    <p style="color: #6c757d; margin-bottom: 2rem;">Apakah Anda yakin ingin melakukan ini?</p>
-                </div>
-            `,
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Konfirmasi',
-            cancelButtonText: 'Batal',
-            reverseButtons: true,
-            customClass: {
-                popup: 'swal2-popup-custom',
-                confirmButton: 'swal2-confirm-custom',
-                cancelButton: 'swal2-cancel-custom'
-            },
-            buttonsStyling: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Submit form logic sama seperti di atas
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = deleteUrl;
-                form.style.display = 'none';
-
-                const csrfToken = document.createElement('input');
-                csrfToken.type = 'hidden';
-                csrfToken.name = '_token';
-                csrfToken.value = '{{ csrf_token() }}';
-
-                const methodField = document.createElement('input');
-                methodField.type = 'hidden';
-                methodField.name = '_method';
-                methodField.value = 'DELETE';
-
-                form.appendChild(csrfToken);
-                form.appendChild(methodField);
-                document.body.appendChild(form);
-                form.submit();
-            }
-        });
+    /* Styling untuk badge dan tombol */
+    .table td {
+        vertical-align: middle;
     }
-    </script>
+    
+    .badge {
+        font-size: 0.75em;
+        padding: 0.375rem 0.75rem;
+    }
+</style>
+@endsection
