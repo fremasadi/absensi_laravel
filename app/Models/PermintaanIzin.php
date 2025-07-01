@@ -22,6 +22,8 @@ class PermintaanIzin extends Model
         'alasan',
         'image',
         'status',
+        'bukti_uploaded_at', // Tambahkan ini ke fillable
+
     ];
 
     // Relasi dengan model User
@@ -29,4 +31,8 @@ class PermintaanIzin extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    protected $casts = [
+        'bukti_uploaded_at' => 'datetime',
+    ];
 }

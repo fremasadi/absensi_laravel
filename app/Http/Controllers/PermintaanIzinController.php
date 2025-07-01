@@ -45,6 +45,7 @@ class PermintaanIzinController extends Controller
 
         $data = $request->all();
         $data['user_id'] = Auth::id();
+        $data['bukti_uploaded_at'] = null; // Set null jika tidak ada bukti
 
         PermintaanIzin::create($data);
 
