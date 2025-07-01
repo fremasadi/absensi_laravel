@@ -50,18 +50,6 @@ class AbsensiController extends Controller
         $shiftStart = Carbon::parse($shift->start_time);
         $shiftEnd = Carbon::parse($shift->end_time);
 
-        // Toleransi waktu (misal 30 menit sebelum dan sesudah shift)
-        $toleranceMinutes = 30;
-        $shiftStartWithTolerance = $shiftStart->copy()->subMinutes($toleranceMinutes);
-        $shiftEndWithTolerance = $shiftEnd->copy()->addMinutes($toleranceMinutes);
-
-        if (!$now->between($shiftStartWithTolerance, $shiftEndWithTolerance)) {
-            return response()->json([
-                'message' => 'Waktu scan di luar jadwal shift. Shift Anda: ' .
-                $shift->start_time . ' - ' . $shift->end_time
-            ], 400);
-        }
-
         // Proses menyimpan file selfie langsung ke storage/app
         $selfieFileName = 'selfie_' . $userId . '_' . $now->format('Ymd_His') . '.' . $selfieImage->getClientOriginalExtension();
 
@@ -74,11 +62,27 @@ class AbsensiController extends Controller
             ->first();
 
         if ($absensi) {
-
-            // Jika sudah ada absensi hari ini
+            // Jika sudah ada absensi hari ini (proses absen keluar)
             if ($absensi->waktu_keluar_time) {
                 return response()->json([
                     'message' => 'Anda sudah melakukan absensi masuk dan keluar hari ini.'
+                ], 400);
+            }
+
+            // Validasi waktu absen keluar
+            // Bisa absen keluar dari jam end shift sampai 1 jam setelahnya
+            $shiftEndWithBuffer = $shiftEnd->copy()->addHour();
+            
+            if ($now->lt($shiftEnd)) {
+                return response()->json([
+                    'message' => 'Belum waktunya absen keluar. Shift berakhir pada: ' . $shift->end_time
+                ], 400);
+            }
+
+            if ($now->gt($shiftEndWithBuffer)) {
+                return response()->json([
+                    'message' => 'Waktu absen keluar sudah terlewat. Batas absen keluar sampai: ' . 
+                    $shiftEndWithBuffer->format('H:i:s')
                 ], 400);
             }
 
@@ -115,6 +119,36 @@ class AbsensiController extends Controller
                 'selfie_path' => $selfiePath
             ]);
         } else {
+            // Proses absen masuk
+            // Validasi waktu absen masuk
+            // Batas terlambat: 2 jam setelah shift mulai
+            $batasTerlambat = $shiftStart->copy()->addHours(2);
+            
+            // Batas minimum: 30 menit sebelum shift
+            $batasMinimum = $shiftStart->copy()->subMinutes(30);
+
+            if ($now->lt($batasMinimum)) {
+                return response()->json([
+                    'message' => 'Belum waktunya absen masuk. Shift dimulai pada: ' . $shift->start_time
+                ], 400);
+            }
+
+            if ($now->gt($batasTerlambat)) {
+                return response()->json([
+                    'message' => 'Waktu absen masuk sudah terlewat. Batas absen masuk sampai: ' . 
+                    $batasTerlambat->format('H:i:s')
+                ], 400);
+            }
+
+            // Tentukan status kehadiran dan keterangan
+            $statusKehadiran = 'hadir';
+            $keterangan = 'hadir';
+            
+            if ($now->gt($shiftStart)) {
+                $statusKehadiran = 'terlambat';
+                $keterangan = 'terlambat';
+            }
+
             // Buat absensi baru untuk waktu masuk
             $absensi = Absensi::create([
                 'id_user' => $userId,
@@ -122,16 +156,23 @@ class AbsensiController extends Controller
                 'tanggal_absen' => $now->toDateString(),
                 'waktu_masuk_time' => $now->toTimeString(),
                 'durasi_hadir' => 0, // Durasi awal 0 karena baru masuk
-                'status_kehadiran' => 'hadir',
-                'keterangan' => 'hadir',
+                'status_kehadiran' => $statusKehadiran,
+                'keterangan' => $keterangan,
                 'selfiemasuk' => $selfiePath, // Path relatif ke storage/app
                 'created_at' => $now,
                 'updated_at' => $now
             ]);
 
+            $message = 'Absensi masuk berhasil dicatat.';
+            if ($statusKehadiran === 'terlambat') {
+                $selisihMenit = $shiftStart->diffInMinutes($now);
+                $message .= ' (Terlambat ' . $this->formatDurasi($selisihMenit) . ')';
+            }
+
             return response()->json([
-                'message' => 'Absensi masuk berhasil dicatat.',
+                'message' => $message,
                 'waktu_masuk' => $now->format('H:i:s'),
+                'status' => $statusKehadiran,
                 'selfie_path' => $selfiePath
             ]);
         }
