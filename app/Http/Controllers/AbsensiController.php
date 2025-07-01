@@ -46,19 +46,28 @@ class AbsensiController extends Controller
             return response()->json(['message' => 'Data shift tidak valid.'], 400);
         }
 
-        $now = Carbon::now();
-        $shiftStart = Carbon::parse($shift->start_time);
-        $shiftEnd = Carbon::parse($shift->end_time);
+        // Set timezone untuk Indonesia
+        $now = Carbon::now('Asia/Jakarta');
+        $today = Carbon::today('Asia/Jakarta');
+        
+        // Parsing waktu shift dengan tanggal hari ini
+        $shiftStart = Carbon::createFromFormat('Y-m-d H:i:s', $today->format('Y-m-d') . ' ' . $shift->start_time, 'Asia/Jakarta');
+        $shiftEnd = Carbon::createFromFormat('Y-m-d H:i:s', $today->format('Y-m-d') . ' ' . $shift->end_time, 'Asia/Jakarta');
+
+        // Jika shift end lebih kecil dari start (shift malam), tambahkan 1 hari
+        if ($shiftEnd->lt($shiftStart)) {
+            $shiftEnd->addDay();
+        }
 
         // Batas waktu untuk absen masuk (2 jam setelah shift dimulai)
-        $lateThreshold = $shiftStart->copy()->addMinutes(120); // 2 jam = 120 menit
+        $lateThreshold = $shiftStart->copy()->addHours(2);
         
         // Batas waktu untuk absen keluar (1 jam setelah shift selesai)
-        $checkoutDeadline = $shiftEnd->copy()->addMinutes(60); // 1 jam setelah selesai
+        $checkoutDeadline = $shiftEnd->copy()->addHour();
 
         // Cari data absensi hari ini
         $absensi = Absensi::where('id_user', $userId)
-            ->where('tanggal_absen', Carbon::today())
+            ->where('tanggal_absen', $today->format('Y-m-d'))
             ->first();
 
         if ($absensi) {
@@ -72,50 +81,48 @@ class AbsensiController extends Controller
             // Validasi waktu absen keluar
             if ($now->lt($shiftEnd)) {
                 return response()->json([
-                    'message' => 'Belum waktunya absen keluar. Shift berakhir pada: ' . $shift->end_time
+                    'message' => 'Belum waktunya absen keluar. Shift berakhir pada: ' . $shiftEnd->format('H:i')
                 ], 400);
             }
 
             if ($now->gt($checkoutDeadline)) {
                 return response()->json([
                     'message' => 'Waktu absen keluar sudah terlewat. Batas maksimal: ' . 
-                    $checkoutDeadline->format('H:i:s')
+                    $checkoutDeadline->format('H:i')
                 ], 400);
             }
 
-            // Proses menyimpan file selfie langsung ke storage/app
+            // Proses menyimpan file selfie keluar
             $selfieFileName = 'selfie_keluar_' . $userId . '_' . $now->format('Ymd_His') . '.' . $selfieImage->getClientOriginalExtension();
             $selfiePath = $selfieImage->storeAs('selfies', $selfieFileName);
 
             // Hitung durasi hadir
-            $waktuMasuk = Carbon::parse($absensi->waktu_masuk_time);
-            $waktuKeluar = Carbon::now();
-            $durasiHadir = $waktuMasuk->diffInMinutes($waktuKeluar);
+            $waktuMasukTime = Carbon::createFromFormat('H:i:s', $absensi->waktu_masuk_time, 'Asia/Jakarta');
+            $waktuMasukFull = Carbon::createFromFormat('Y-m-d H:i:s', $today->format('Y-m-d') . ' ' . $absensi->waktu_masuk_time, 'Asia/Jakarta');
+            $durasiHadir = $waktuMasukFull->diffInMinutes($now);
 
             // Update waktu keluar dan durasi
             $absensi->update([
-                'waktu_keluar_time' => $waktuKeluar->toTimeString(),
+                'waktu_keluar_time' => $now->format('H:i:s'),
                 'durasi_hadir' => $durasiHadir,
-                'selfiekeluar' => $selfiePath, // Path relatif ke storage/app
+                'selfiekeluar' => $selfiePath,
                 'updated_at' => $now
             ]);
 
             try {
-                // Ambil instance User berdasarkan ID
                 $user = User::find($userId);
                 if ($user) {
-                    Gaji::generateSalary($user); // Kirim instance User, bukan ID
+                    Gaji::generateSalary($user);
                 } else {
                     \Log::error('User tidak ditemukan dengan ID: ' . $userId);
                 }
             } catch (\Exception $e) {
-                // Log error, tetapi tidak menghentikan proses absensi
                 \Log::error('Gagal generate salary: ' . $e->getMessage());
             }
 
             return response()->json([
                 'message' => 'Absensi keluar berhasil dicatat.',
-                'waktu_keluar' => $waktuKeluar->format('H:i:s'),
+                'waktu_keluar' => $now->format('H:i:s'),
                 'durasi_hadir' => $this->formatDurasi($durasiHadir),
                 'selfie_path' => $selfiePath
             ]);
@@ -127,20 +134,24 @@ class AbsensiController extends Controller
             if ($now->gt($lateThreshold)) {
                 return response()->json([
                     'message' => 'Waktu absen masuk sudah terlewat. Batas maksimal: ' . 
-                    $lateThreshold->format('H:i:s')
+                    $lateThreshold->format('H:i')
                 ], 400);
             }
 
-            // Tentukan status kehadiran dan keterangan
+            // Tentukan status kehadiran berdasarkan waktu
             $statusKehadiran = 'hadir';
             $keterangan = 'hadir';
             
+            // Jika absen setelah waktu shift dimulai, maka terlambat
             if ($now->gt($shiftStart)) {
-                $statusKehadiran = 'terlambat';
-                $keterangan = 'terlambat';
+                $minutesLate = $shiftStart->diffInMinutes($now);
+                if ($minutesLate > 0) { // Toleransi 0 menit
+                    $statusKehadiran = 'terlambat';
+                    $keterangan = 'terlambat ' . $minutesLate . ' menit';
+                }
             }
 
-            // Proses menyimpan file selfie langsung ke storage/app
+            // Proses menyimpan file selfie masuk
             $selfieFileName = 'selfie_masuk_' . $userId . '_' . $now->format('Ymd_His') . '.' . $selfieImage->getClientOriginalExtension();
             $selfiePath = $selfieImage->storeAs('selfies', $selfieFileName);
 
@@ -148,12 +159,12 @@ class AbsensiController extends Controller
             $absensi = Absensi::create([
                 'id_user' => $userId,
                 'id_jadwal' => $jadwalShift->id,
-                'tanggal_absen' => $now->toDateString(),
-                'waktu_masuk_time' => $now->toTimeString(),
-                'durasi_hadir' => 0, // Durasi awal 0 karena baru masuk
+                'tanggal_absen' => $today->format('Y-m-d'),
+                'waktu_masuk_time' => $now->format('H:i:s'),
+                'durasi_hadir' => 0,
                 'status_kehadiran' => $statusKehadiran,
                 'keterangan' => $keterangan,
-                'selfiemasuk' => $selfiePath, // Path relatif ke storage/app
+                'selfiemasuk' => $selfiePath,
                 'created_at' => $now,
                 'updated_at' => $now
             ]);
@@ -165,9 +176,16 @@ class AbsensiController extends Controller
             return response()->json([
                 'message' => $responseMessage,
                 'waktu_masuk' => $now->format('H:i:s'),
+                'waktu_shift' => $shiftStart->format('H:i:s'),
                 'status' => $statusKehadiran,
                 'keterangan' => $keterangan,
-                'selfie_path' => $selfiePath
+                'selfie_path' => $selfiePath,
+                'debug' => [
+                    'now' => $now->format('Y-m-d H:i:s'),
+                    'shift_start' => $shiftStart->format('Y-m-d H:i:s'),
+                    'is_late' => $now->gt($shiftStart),
+                    'minutes_diff' => $now->gt($shiftStart) ? $shiftStart->diffInMinutes($now) : 0
+                ]
             ]);
         }
     }
