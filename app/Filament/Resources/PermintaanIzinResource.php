@@ -77,8 +77,8 @@ class PermintaanIzinResource extends Resource
                 Tables\Columns\TextColumn::make('jenis_izin')
                     ->searchable(),
                 Tables\Columns\ImageColumn::make('image'),
-                Tables\Columns\IconColumn::make('status')
-                    ->boolean(),
+                // Tables\Columns\IconColumn::make('status')
+                //     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
