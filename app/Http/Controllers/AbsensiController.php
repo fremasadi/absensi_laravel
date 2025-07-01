@@ -121,6 +121,7 @@ class AbsensiController extends Controller
             }
 
             return response()->json([
+                'title' => 'Absensi Keluar',
                 'message' => 'Absensi keluar berhasil dicatat.',
                 'waktu_keluar' => $now->format('H:i:s'),
                 'durasi_hadir' => $this->formatDurasi($durasiHadir),
@@ -174,6 +175,7 @@ class AbsensiController extends Controller
                 : 'Absensi masuk berhasil dicatat.';
 
             return response()->json([
+                'title' => 'Absensi Masuk',
                 'message' => $responseMessage,
                 'waktu_masuk' => $now->format('H:i:s'),
                 'waktu_shift' => $shiftStart->format('H:i:s'),

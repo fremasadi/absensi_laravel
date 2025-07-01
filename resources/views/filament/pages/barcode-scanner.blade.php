@@ -243,9 +243,8 @@
                     .then(data => {
                         // Show success message with SweetAlert
                         Swal.fire({
-                            title: 'Berhasil!',
+                            title: data.title || 'Berhasil!',
                             text: data.message,
-                            icon: 'success',
                             confirmButtonText: 'OK'
                         }).then(() => {
                             // Reset UI
