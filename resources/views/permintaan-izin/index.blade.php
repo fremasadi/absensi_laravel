@@ -31,7 +31,7 @@
                             <th>Tanggal Selesai</th>
                             <th>Jenis Izin</th>
                             <th>Bukti</th>
-                            <th>Aksi</th>
+                            {{-- <th>Aksi</th> --}}
                         </tr>
                     </thead>
                     <tbody>
@@ -74,7 +74,7 @@
                                     @endif
                                 @endif
                             </td>
-                            <td>
+                            {{-- <td>
                                 @if(!$izin->status)
                                     <a href="{{ route('permintaan-izin.edit', $izin) }}" class="btn btn-warning btn-sm">
                                         <i class="fas fa-edit"></i>
@@ -84,9 +84,9 @@
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 @else
-                                    {{-- <span class="badge badge-success">Disetujui</span> --}}
+                                    <span class="badge badge-success">Disetujui</span>
                                 @endif
-                            </td>
+                            </td> --}}
                         </tr>
                         @endforeach
                     </tbody>
