@@ -83,9 +83,9 @@
                                     <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('{{ route('permintaan-izin.destroy', $izin) }}', '{{ $izin->jenis_izin }}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
-                                @else
+                                {{-- @else
                                     <span class="badge badge-success">Disetujui</span>
-                                @endif
+                                @endif --}}
                             </td>
                         </tr>
                         @endforeach
