@@ -30,7 +30,7 @@
                             <th>Tanggal Mulai</th>
                             <th>Tanggal Selesai</th>
                             <th>Jenis Izin</th>
-                            <th>Status</th>
+                            {{-- <th>Status</th> --}}
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -42,7 +42,7 @@
                             <td>{{ \Carbon\Carbon::parse($izin->tanggal_mulai)->format('d/m/Y') }}</td>
                             <td>{{ \Carbon\Carbon::parse($izin->tanggal_selesai)->format('d/m/Y') }}</td>
                             <td>{{ $izin->jenis_izin }}</td>
-                            <td>
+                            {{-- <td>
                                 @if(auth()->user()->role === 'admin')
                                 <form action="{{ route('permintaan-izin.update-status', $izin) }}" method="POST">
                                     @csrf
@@ -56,11 +56,11 @@
                                         {{ $izin->status ? 'Disetujui' : 'Pending' }}
                                     </span>
                                 @endif
-                            </td>
+                            </td> --}}
                             <td>
-                                <!-- <a href="{{ route('permintaan-izin.show', $izin) }}" class="btn btn-info btn-sm">
-                                    <i class="fas fa-eye"></i>
-                                </a> -->
+                                {{-- <!-- <a href="{{ route('permintaan-izin.show', $izin) }}" class="btn btn-info btn-sm"> --}}
+                                    {{-- <i class="fas fa-eye"></i> --}}
+                                {{-- </a> --> --}}
 
                                 <!-- Tombol Edit dan Delete hanya muncul jika status false (pending) -->
                                 @if(!$izin->status)
