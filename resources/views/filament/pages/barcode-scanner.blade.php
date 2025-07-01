@@ -1,89 +1,18 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner Absensi</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 10px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        #scanner-container {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        #camera-container {
-            position: relative;
-            background: #000;
-        }
-        #countdown {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 72px;
-            color: white;
-            text-shadow: 2px 2px 4px #000;
-            font-weight: bold;
-        }
-        #selfie-preview {
-            background: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            margin: 5px 0;
-        }
-        .status-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .status-warning {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        .status-error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div id="scanner-container">
-            <div id="barcode-scanner" style="width: 100%; height: 100vh;"></div>
-            <input type="hidden" name="barcode_result" id="barcode-result">
-            
-            <div class="mt-4">
-                <div id="camera-container" class="my-2" style="width: 100%; height: 100vh; border: 1px solid #ccc; display: none; position: relative;">
-                    <video id="camera-view" width="100%" height="100%" autoplay></video>
-                    <div id="countdown" style="display: none;">3</div>
-                    <canvas id="camera-canvas" style="display:none;"></canvas>
-                </div>
-                <div id="selfie-preview" class="my-2" style="width: 100%; max-width: 500px; height: auto; border: 1px solid #ccc; margin: 0 auto; display: none;">
-                    <img id="selfie-image" width="100%" height="100%">
-                </div>
-            </div>
+<div id="scanner-container">
+    <div id="barcode-scanner" style="width: 100%; height: 100vh;"></div>
+    <input type="hidden" name="barcode_result" id="barcode-result">
+    
+    <div class="mt-4">
+        <div id="camera-container" class="my-2" style="width: 100%; height: 100vh; border: 1px solid #ccc; display: none; position: relative;">
+            <video id="camera-view" width="100%" height="100%" autoplay></video>
+            <div id="countdown" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; color: white; text-shadow: 2px 2px 4px #000; display: none;">3</div>
+            <canvas id="camera-canvas" style="display:none;"></canvas>
+        </div>
+        <div id="selfie-preview" class="my-2" style="width: 100%; max-width: 500px; height: auto; border: 1px solid #ccc; margin: 0 auto; display: none;">
+            <img id="selfie-image" width="100%" height="100%">
         </div>
     </div>
+    
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -277,7 +206,14 @@
                         method: 'POST',
                         body: formData,
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(errorData => {
+                                throw new Error(errorData.message || 'Network response was not ok');
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         // Handle different response scenarios based on controller logic
                         if (data.message) {
@@ -308,9 +244,9 @@
                                     <p><strong>Durasi Hadir:</strong> ${data.durasi_hadir}</p>
                                 `;
                             } else {
-                                // Error messages from controller
+                                // Error messages from controller (400 status codes)
                                 alertConfig.title = 'Perhatian';
-                                alertConfig.icon = 'error';
+                                alertConfig.icon = 'warning';
                                 alertConfig.text = data.message;
                             }
 
@@ -398,5 +334,4 @@
             }
         });
     </script>
-</body>
-</html>
+</div>
