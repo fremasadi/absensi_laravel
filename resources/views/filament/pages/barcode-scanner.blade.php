@@ -3,421 +3,399 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="your-csrf-token-here">
-    <title>Absensi Scanner</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>Scanner Absensi</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        .glass {
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f5f5f5;
         }
-        
-        .scanner-overlay {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
         }
-        
-        .scanner-border {
-            border: 3px solid #4CAF50;
-            border-radius: 12px;
-            box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
-        }
-        
-        .countdown-animation {
-            animation: pulse 1s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.1); }
-            100% { transform: translate(-50%, -50%) scale(1); }
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        }
-        
-        .status-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-        
-        .camera-frame {
-            position: relative;
-            border-radius: 20px;
+        #scanner-container {
+            background: white;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
-        .scanner-corner {
+        #camera-container {
+            position: relative;
+            background: #000;
+        }
+        #countdown {
             position: absolute;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #4CAF50;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            color: white;
+            text-shadow: 2px 2px 4px #000;
+            font-weight: bold;
         }
-        
-        .corner-tl { top: 10px; left: 10px; border-right: none; border-bottom: none; }
-        .corner-tr { top: 10px; right: 10px; border-left: none; border-bottom: none; }
-        .corner-bl { bottom: 10px; left: 10px; border-right: none; border-top: none; }
-        .corner-br { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+        #selfie-preview {
+            background: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
-<body class="min-h-screen scanner-overlay">
-    <div class="container mx-auto px-4 py-6">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <div class="glass rounded-2xl p-6 mb-6">
-                <h1 class="text-3xl font-bold text-white mb-2">
-                    <i class="fas fa-qrcode mr-3"></i>
-                    Sistem Absensi
-                </h1>
-                <p class="text-white/80">Scan QR Code untuk melakukan absensi</p>
-            </div>
-        </div>
-
-        <!-- Status Card -->
-        <div id="status-card" class="glass rounded-2xl p-6 mb-6 text-center" style="display: none;">
-            <div class="text-white">
-                <i class="fas fa-clock text-4xl mb-3"></i>
-                <h3 class="text-xl font-semibold mb-2" id="status-title">Menunggu Scan...</h3>
-                <p id="status-message">Arahkan kamera ke QR Code</p>
-            </div>
-        </div>
-
-        <!-- Scanner Container -->
-        <div id="scanner-container" class="relative">
-            <div class="glass rounded-2xl p-4 mb-6">
-                <div id="barcode-scanner" class="relative rounded-xl overflow-hidden scanner-border">
-                    <!-- Scanner corners -->
-                    <div class="scanner-corner corner-tl"></div>
-                    <div class="scanner-corner corner-tr"></div>
-                    <div class="scanner-corner corner-bl"></div>
-                    <div class="scanner-corner corner-br"></div>
-                </div>
-            </div>
-            
+<body>
+    <div class="container">
+        <div id="scanner-container">
+            <div id="barcode-scanner" style="width: 100%; height: 100vh;"></div>
             <input type="hidden" name="barcode_result" id="barcode-result">
-        </div>
-
-        <!-- Camera Container -->
-        <div id="camera-container" class="glass rounded-2xl p-4 mb-6" style="display: none;">
-            <div class="text-center mb-4">
-                <h3 class="text-xl font-bold text-white mb-2">
-                    <i class="fas fa-camera mr-2"></i>
-                    Ambil Foto Selfie
-                </h3>
-                <p class="text-white/80">Pastikan wajah Anda terlihat jelas</p>
-            </div>
             
-            <div class="camera-frame mx-auto" style="max-width: 400px;">
-                <video id="camera-view" width="100%" height="100%" autoplay class="rounded-xl"></video>
-                
-                <!-- Countdown Overlay -->
-                <div id="countdown" class="absolute inset-0 flex items-center justify-center" style="display: none;">
-                    <div class="countdown-animation bg-red-500 text-white rounded-full w-24 h-24 flex items-center justify-center text-4xl font-bold shadow-2xl">
-                        3
-                    </div>
+            <div class="mt-4">
+                <div id="camera-container" class="my-2" style="width: 100%; height: 100vh; border: 1px solid #ccc; display: none; position: relative;">
+                    <video id="camera-view" width="100%" height="100%" autoplay></video>
+                    <div id="countdown" style="display: none;">3</div>
+                    <canvas id="camera-canvas" style="display:none;"></canvas>
                 </div>
-                
-                <!-- Camera overlay guide -->
-                <div class="absolute inset-0 pointer-events-none">
-                    <div class="w-full h-full border-4 border-white/30 rounded-xl flex items-center justify-center">
-                        <div class="w-48 h-60 border-2 border-white/60 rounded-xl relative">
-                            <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 text-white text-sm">
-                                Posisi Wajah
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <canvas id="camera-canvas" style="display:none;"></canvas>
-            
-            <div class="text-center mt-4">
-                <button id="retake-btn" class="btn-primary text-white px-6 py-3 rounded-xl font-semibold" style="display: none;">
-                    <i class="fas fa-redo mr-2"></i>
-                    Ambil Ulang
-                </button>
-            </div>
-        </div>
-
-        <!-- Selfie Preview -->
-        <div id="selfie-preview" class="glass rounded-2xl p-4 mb-6" style="display: none;">
-            <div class="text-center mb-4">
-                <h3 class="text-xl font-bold text-white mb-2">
-                    <i class="fas fa-check-circle mr-2"></i>
-                    Preview Selfie
-                </h3>
-                <p class="text-white/80">Periksa foto sebelum mengirim</p>
-            </div>
-            
-            <div class="max-w-md mx-auto">
-                <img id="selfie-image" class="w-full rounded-xl shadow-lg">
-            </div>
-            
-            <div class="flex gap-4 justify-center mt-6">
-                <button id="confirm-selfie" class="btn-primary text-white px-8 py-3 rounded-xl font-semibold">
-                    <i class="fas fa-check mr-2"></i>
-                    Kirim Absensi
-                </button>
-                <button id="retake-selfie" class="bg-gray-500 text-white px-8 py-3 rounded-xl font-semibold hover:bg-gray-600 transition-all">
-                    <i class="fas fa-camera mr-2"></i>
-                    Foto Ulang
-                </button>
-            </div>
-        </div>
-
-        <!-- Instructions -->
-        <div class="glass rounded-2xl p-6 text-center">
-            <h3 class="text-lg font-bold text-white mb-4">
-                <i class="fas fa-info-circle mr-2"></i>
-                Petunjuk Penggunaan
-            </h3>
-            <div class="grid md:grid-cols-3 gap-4 text-white/80">
-                <div class="flex flex-col items-center">
-                    <i class="fas fa-qrcode text-3xl mb-3"></i>
-                    <p class="text-sm">1. Scan QR Code absensi</p>
-                </div>
-                <div class="flex flex-col items-center">
-                    <i class="fas fa-camera text-3xl mb-3"></i>
-                    <p class="text-sm">2. Ambil foto selfie</p>
-                </div>
-                <div class="flex flex-col items-center">
-                    <i class="fas fa-check text-3xl mb-3"></i>
-                    <p class="text-sm">3. Konfirmasi absensi</p>
+                <div id="selfie-preview" class="my-2" style="width: 100%; max-width: 500px; height: auto; border: 1px solid #ccc; margin: 0 auto; display: none;">
+                    <img id="selfie-image" width="100%" height="100%">
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            let scanner;
-            let barcodeData = null;
-            let selfieBlob = null;
-            let stream = null;
-
-            // Elements
-            const statusCard = document.getElementById('status-card');
-            const statusTitle = document.getElementById('status-title');
-            const statusMessage = document.getElementById('status-message');
-            const cameraContainer = document.getElementById('camera-container');
-            const cameraView = document.getElementById('camera-view');
-            const cameraCanvas = document.getElementById('camera-canvas');
-            const selfiePreview = document.getElementById('selfie-preview');
-            const selfieImage = document.getElementById('selfie-image');
-            const countdownElement = document.getElementById('countdown');
-            const confirmSelfieBtn = document.getElementById('confirm-selfie');
-            const retakeSelfieBtn = document.getElementById('retake-selfie');
-
-            // Initialize scanner
+            initScanner();
+            
             function initScanner() {
-                statusCard.style.display = 'block';
+                // Style untuk menyembunyikan teks scan image
+                const style = document.createElement('style');
+                style.textContent = `
+                    #barcode-scanner section div:first-child span {
+                        display: none !important;
+                    }
+                    #barcode-scanner section div button span {
+                        display: none !important;
+                    }
+                    #barcode-scanner section div button::before {
+                        content: "Scan QR Code";
+                    }
+                    #barcode-scanner section div:nth-child(2) {
+                        display: none !important;
+                    }
+                `;
+                document.head.appendChild(style);
                 
-                scanner = new Html5QrcodeScanner("barcode-scanner", {
+                // Barcode scanner setup
+                const scanner = new Html5QrcodeScanner("barcode-scanner", {
                     fps: 10,
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0,
+                    qrbox: { width: 300, height: 300 },
+                    aspectRatio: window.innerWidth / window.innerHeight,
                     disableFlip: false,
                     rememberLastUsedCamera: true,
                     showTorchButtonIfSupported: true
                 });
 
-                scanner.render(onScanSuccess, onScanFailure);
-                
-                // Hide file selection option
+                // Hide unwanted elements after scanner renders
                 setTimeout(() => {
                     const fileSelectionContainer = document.querySelector('#barcode-scanner section div:nth-child(2)');
                     if (fileSelectionContainer) {
                         fileSelectionContainer.style.display = 'none';
                     }
-                }, 1000);
-            }
-
-            function onScanSuccess(decodedText) {
-                document.getElementById('barcode-result').value = decodedText;
-                scanner.clear();
-                barcodeData = decodedText;
-                
-                updateStatus('QR Code Terdeteksi!', 'Menyiapkan kamera untuk selfie...', 'success');
-                
-                setTimeout(() => {
-                    document.getElementById('scanner-container').style.display = 'none';
-                    startCamera();
-                }, 2000);
-            }
-
-            function onScanFailure(error) {
-                // Handle scan failure silently
-            }
-
-            function updateStatus(title, message, type = 'info') {
-                statusTitle.textContent = title;
-                statusMessage.textContent = message;
-                
-                const icon = statusCard.querySelector('i');
-                icon.className = `fas text-4xl mb-3 ${
-                    type === 'success' ? 'fa-check-circle' : 
-                    type === 'error' ? 'fa-times-circle' : 'fa-clock'
-                }`;
-            }
-
-            async function startCamera() {
-                try {
-                    updateStatus('Mengakses Kamera...', 'Mohon izinkan akses kamera');
                     
-                    stream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { 
-                            facingMode: "user",
-                            width: { ideal: 640 },
-                            height: { ideal: 480 }
-                        } 
+                    const headerTexts = document.querySelectorAll('#barcode-scanner section div span');
+                    headerTexts.forEach(span => {
+                        if (span.textContent.includes('Scan')) {
+                            span.style.display = 'none';
+                        }
                     });
+                }, 500);
+
+                let barcodeData = null;
+                let selfieBlob = null;
+                let stream = null;
+
+                // Camera elements
+                const cameraContainer = document.getElementById('camera-container');
+                const cameraView = document.getElementById('camera-view');
+                const cameraCanvas = document.getElementById('camera-canvas');
+                const selfiePreview = document.getElementById('selfie-preview');
+                const selfieImage = document.getElementById('selfie-image');
+                const countdownElement = document.getElementById('countdown');
+
+                // Barcode scan handler
+                scanner.render((decodedText) => {
+                    document.getElementById('barcode-result').value = decodedText;
+                    scanner.clear();
+                    barcodeData = decodedText;
                     
-                    cameraView.srcObject = stream;
-                    cameraContainer.style.display = 'block';
-                    
-                    updateStatus('Kamera Siap', 'Bersiap untuk mengambil foto...', 'success');
-                    
-                    setTimeout(() => {
-                        startCountdown();
-                    }, 2000);
-                    
-                } catch (err) {
-                    updateStatus('Error Kamera', 'Gagal mengakses kamera', 'error');
                     Swal.fire({
-                        title: 'Error!',
-                        text: 'Gagal mengakses kamera. Pastikan izin kamera sudah diberikan.',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                }
-            }
-
-            function startCountdown() {
-                updateStatus('Foto Otomatis', 'Bersiap dalam 3 detik...');
-                countdownElement.style.display = 'flex';
-                let count = 3;
-                
-                const countInterval = setInterval(() => {
-                    count--;
-                    countdownElement.querySelector('div').textContent = count;
-                    
-                    if (count <= 0) {
-                        clearInterval(countInterval);
-                        countdownElement.style.display = 'none';
-                        capturePhoto();
-                    }
-                }, 1000);
-            }
-
-            function capturePhoto() {
-                const context = cameraCanvas.getContext('2d');
-                cameraCanvas.width = cameraView.videoWidth;
-                cameraCanvas.height = cameraView.videoHeight;
-                context.drawImage(cameraView, 0, 0, cameraCanvas.width, cameraCanvas.height);
-                
-                cameraCanvas.toBlob((blob) => {
-                    selfieBlob = blob;
-                    const imageUrl = URL.createObjectURL(blob);
-                    selfieImage.src = imageUrl;
-                    
-                    // Show preview
-                    cameraContainer.style.display = 'none';
-                    selfiePreview.style.display = 'block';
-                    
-                    updateStatus('Foto Berhasil', 'Periksa dan konfirmasi foto Anda', 'success');
-                    
-                }, 'image/jpeg', 0.8);
-            }
-
-            function submitData() {
-                updateStatus('Mengirim Data...', 'Mohon tunggu sebentar');
-                
-                Swal.fire({
-                    title: 'Mengirim Absensi...',
-                    html: '<div class="spinner-border text-primary" role="status"></div>',
-                    allowOutsideClick: false,
-                    showConfirmButton: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-                
-                const formData = new FormData();
-                formData.append('barcode', barcodeData);
-                formData.append('selfie', selfieBlob, 'selfie.jpg');
-                formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-
-                fetch('/handle-scan', {
-                    method: 'POST',
-                    body: formData,
-                })
-                .then(response => response.json())
-                .then(data => {
-                    Swal.fire({
-                        title: data.status === 'terlambat' ? 'Absensi Terlambat!' : 'Berhasil!',
-                        text: data.message,
-                        icon: data.status === 'terlambat' ? 'warning' : 'success',
-                        confirmButtonText: 'OK',
-                        timer: 5000,
-                        timerProgressBar: true
+                        title: 'QR Code Terdeteksi!',
+                        text: 'Menyiapkan kamera untuk selfie...',
+                        icon: 'success',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
                     }).then(() => {
-                        resetUI();
+                        const scannerElement = document.getElementById('barcode-scanner');
+                        scannerElement.style.display = 'none';
+                        startCamera();
                     });
-                })
-                .catch(error => {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Terjadi kesalahan: ' + error.message,
-                        icon: 'error',
-                        confirmButtonText: 'Coba Lagi'
-                    });
-                    updateStatus('Error', 'Gagal mengirim data', 'error');
                 });
-            }
 
-            function resetUI() {
-                // Stop camera
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                    stream = null;
+                // Start camera function
+                async function startCamera() {
+                    try {
+                        stream = await navigator.mediaDevices.getUserMedia({ 
+                            video: { facingMode: "user" } 
+                        });
+                        cameraView.srcObject = stream;
+                        cameraContainer.style.display = 'block';
+                        
+                        Swal.fire({
+                            title: 'Kamera Siap',
+                            text: 'Harap tunggu 3 detik untuk foto otomatis...',
+                            icon: 'info',
+                            timer: 1000,
+                            showConfirmButton: false,
+                            timerProgressBar: true
+                        }).then(() => {
+                            startCountdown();
+                        });
+                    } catch (err) {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Gagal mengakses kamera: ' + err,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
                 }
-                
-                // Reset UI
-                selfiePreview.style.display = 'none';
-                cameraContainer.style.display = 'none';
-                document.getElementById('scanner-container').style.display = 'block';
-                
-                // Reset data
-                barcodeData = null;
-                selfieBlob = null;
-                
-                // Restart scanner
-                updateStatus('Menunggu Scan...', 'Arahkan kamera ke QR Code');
-                initScanner();
+
+                // Countdown function
+                function startCountdown() {
+                    countdownElement.style.display = 'block';
+                    let count = 3;
+                    countdownElement.textContent = count;
+                    
+                    const countInterval = setInterval(() => {
+                        count--;
+                        countdownElement.textContent = count;
+                        
+                        if (count <= 0) {
+                            clearInterval(countInterval);
+                            countdownElement.style.display = 'none';
+                            capturePhoto();
+                        }
+                    }, 1000);
+                }
+
+                // Capture photo function
+                function capturePhoto() {
+                    const context = cameraCanvas.getContext('2d');
+                    cameraCanvas.width = cameraView.videoWidth;
+                    cameraCanvas.height = cameraView.videoHeight;
+                    context.drawImage(cameraView, 0, 0, cameraCanvas.width, cameraCanvas.height);
+                    
+                    cameraCanvas.toBlob((blob) => {
+                        selfieBlob = blob;
+                        const imageUrl = URL.createObjectURL(blob);
+                        selfieImage.src = imageUrl;
+                        
+                        selfiePreview.style.display = 'block';
+                        cameraContainer.style.display = 'none';
+                        
+                        Swal.fire({
+                            title: 'Selfie Diambil',
+                            text: 'Apakah Anda ingin menggunakan selfie ini?',
+                            imageUrl: imageUrl,
+                            imageWidth: 300,
+                            imageHeight: 225,
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, Kirim',
+                            cancelButtonText: 'Ambil Ulang',
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                submitData();
+                            } else {
+                                selfiePreview.style.display = 'none';
+                                startCamera();
+                            }
+                        });
+                    }, 'image/jpeg', 0.8);
+                }
+
+                // Function to submit data to server
+                function submitData() {
+                    Swal.fire({
+                        title: 'Sedang Mengirim...',
+                        text: 'Mohon tunggu sebentar',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    const formData = new FormData();
+                    formData.append('barcode', barcodeData);
+                    formData.append('selfie', selfieBlob, 'selfie.jpg');
+                    
+                    // Add CSRF token if available
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                    if (csrfToken) {
+                        formData.append('_token', csrfToken.content);
+                    }
+                    
+                    // Parse data barcode for additional info
+                    const [userId, shiftId, scanTime] = barcodeData.split('|');
+                    formData.append('id_jadwal', shiftId);
+
+                    // Submit the data
+                    fetch('/handle-scan', {
+                        method: 'POST',
+                        body: formData,
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Handle different response scenarios based on controller logic
+                        if (data.message) {
+                            let alertConfig = {
+                                confirmButtonText: 'OK'
+                            };
+
+                            // Determine alert type and content based on response
+                            if (data.waktu_masuk) {
+                                // Absensi masuk berhasil
+                                alertConfig.title = data.status === 'terlambat' ? 'Absensi Masuk (Terlambat)' : 'Absensi Masuk Berhasil';
+                                alertConfig.icon = data.status === 'terlambat' ? 'warning' : 'success';
+                                alertConfig.html = `
+                                    <div class="status-badge ${data.status === 'terlambat' ? 'status-warning' : 'status-success'}">
+                                        ${data.status.toUpperCase()}
+                                    </div>
+                                    <p><strong>Waktu Masuk:</strong> ${data.waktu_masuk}</p>
+                                    <p><strong>Waktu Shift:</strong> ${data.waktu_shift}</p>
+                                    <p><strong>Keterangan:</strong> ${data.keterangan}</p>
+                                `;
+                            } else if (data.waktu_keluar) {
+                                // Absensi keluar berhasil
+                                alertConfig.title = 'Absensi Keluar Berhasil';
+                                alertConfig.icon = 'success';
+                                alertConfig.html = `
+                                    <div class="status-badge status-success">KELUAR</div>
+                                    <p><strong>Waktu Keluar:</strong> ${data.waktu_keluar}</p>
+                                    <p><strong>Durasi Hadir:</strong> ${data.durasi_hadir}</p>
+                                `;
+                            } else {
+                                // Error messages from controller
+                                alertConfig.title = 'Perhatian';
+                                alertConfig.icon = 'error';
+                                alertConfig.text = data.message;
+                            }
+
+                            Swal.fire(alertConfig).then(() => {
+                                // Reset UI only if successful
+                                if (data.waktu_masuk || data.waktu_keluar) {
+                                    resetUI();
+                                    restartScanner();
+                                } else {
+                                    // For errors, just reset to scanner
+                                    resetUI();
+                                    restartScanner();
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan koneksi: ' + error.message,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            resetUI();
+                            restartScanner();
+                        });
+                    });
+                }
+
+                // Function to reset UI
+                function resetUI() {
+                    selfiePreview.style.display = 'none';
+                    
+                    // Stop camera stream
+                    if (stream) {
+                        stream.getTracks().forEach(track => track.stop());
+                        stream = null;
+                    }
+                    
+                    // Reset data
+                    barcodeData = null;
+                    selfieBlob = null;
+                }
+
+                // Function to restart scanner
+                function restartScanner() {
+                    const scannerElement = document.getElementById('barcode-scanner');
+                    scannerElement.style.display = 'block';
+                    
+                    // Restart scanner
+                    scanner.render((decodedText) => {
+                        document.getElementById('barcode-result').value = decodedText;
+                        scanner.clear();
+                        barcodeData = decodedText;
+                        
+                        Swal.fire({
+                            title: 'QR Code Terdeteksi!',
+                            text: 'Menyiapkan kamera untuk selfie...',
+                            icon: 'success',
+                            timer: 2000,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        }).then(() => {
+                            scannerElement.style.display = 'none';
+                            startCamera();
+                        });
+                    });
+                    
+                    // Hide unwanted elements again
+                    setTimeout(() => {
+                        const fileSelectionContainer = document.querySelector('#barcode-scanner section div:nth-child(2)');
+                        if (fileSelectionContainer) {
+                            fileSelectionContainer.style.display = 'none';
+                        }
+                        
+                        const headerTexts = document.querySelectorAll('#barcode-scanner section div span');
+                        headerTexts.forEach(span => {
+                            if (span.textContent.includes('Scan')) {
+                                span.style.display = 'none';
+                            }
+                        });
+                    }, 500);
+                }
             }
-
-            // Event listeners
-            confirmSelfieBtn.addEventListener('click', submitData);
-            retakeSelfieBtn.addEventListener('click', () => {
-                selfiePreview.style.display = 'none';
-                startCamera();
-            });
-
-            // Initialize
-            initScanner();
         });
     </script>
 </body>
