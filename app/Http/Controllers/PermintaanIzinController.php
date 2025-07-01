@@ -41,7 +41,6 @@ class PermintaanIzinController extends Controller
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'jenis_izin' => 'required|string',
             'alasan' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $data = $request->all();
