@@ -15,7 +15,11 @@
         </a>
         <a class="nav-link" href="{{ url('/barcode') }}">
             <i class="fas fa-qrcode"></i>
-            <span>Barcode Absensi</span>
+            <span>Barcode Masuk</span>
+        </a>
+        <a class="nav-link" href="{{ url('/barcode') }}">
+            <i class="fas fa-qrcode"></i>
+            <span>Barcode Pulang</span>
         </a>
         <a class="nav-link" href="{{ route('riwayat-absensi.index') }}">
             <i class="fas fa-inbox"></i>
