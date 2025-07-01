@@ -1,18 +1,23 @@
+<!-- Satu div container untuk semua elemen (Livewire requirement) -->
 <div id="scanner-container">
+    <!-- Barcode Scanner -->
     <div id="barcode-scanner" style="width: 100%; height: 100vh;"></div>
     <input type="hidden" name="barcode_result" id="barcode-result">
     
+    <!-- Camera dan Preview Container -->
     <div class="mt-4">
+        <!-- Camera Container -->
         <div id="camera-container" class="my-2" style="width: 100%; height: 100vh; border: 1px solid #ccc; display: none; position: relative;">
             <video id="camera-view" width="100%" height="100%" autoplay></video>
             <div id="countdown" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; color: white; text-shadow: 2px 2px 4px #000; display: none;">3</div>
             <canvas id="camera-canvas" style="display:none;"></canvas>
         </div>
+        
+        <!-- Selfie Preview -->
         <div id="selfie-preview" class="my-2" style="width: 100%; max-width: 500px; height: auto; border: 1px solid #ccc; margin: 0 auto; display: none;">
             <img id="selfie-image" width="100%" height="100%">
         </div>
     </div>
-    
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -575,5 +580,5 @@
                 }
             }
         });
-</script>
+    </script>
 </div>
