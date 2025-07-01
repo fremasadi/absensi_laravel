@@ -73,7 +73,7 @@ class BarcodeController extends Controller
         // CEK STATUS ABSENSI HARI INI
         $absensiHariIni = Absensi::where('id_user', $user->id)
             ->where('id_jadwal', $jadwal->id)
-            ->whereDate('tanggal', $today)
+            ->whereDate('tanggal_absen', $today)
             ->first();
 
         // Tentukan jenis absensi (masuk/keluar) dan pesan
