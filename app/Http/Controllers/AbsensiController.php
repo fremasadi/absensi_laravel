@@ -149,32 +149,59 @@ class AbsensiController extends Controller
                 $keterangan = 'terlambat';
             }
 
-            // Buat absensi baru untuk waktu masuk
-            $absensi = Absensi::create([
-                'id_user' => $userId,
-                'id_jadwal' => $jadwalShift->id,
-                'tanggal_absen' => $now->toDateString(),
-                'waktu_masuk_time' => $now->toTimeString(),
-                'durasi_hadir' => 0, // Durasi awal 0 karena baru masuk
-                'status_kehadiran' => $statusKehadiran,
-                'keterangan' => $keterangan,
-                'selfiemasuk' => $selfiePath, // Path relatif ke storage/app
-                'created_at' => $now,
-                'updated_at' => $now
-            ]);
+            try {
+                // Buat absensi baru untuk waktu masuk
+                $absensi = Absensi::create([
+                    'id_user' => $userId,
+                    'id_jadwal' => $jadwalShift->id,
+                    'tanggal_absen' => $now->toDateString(),
+                    'waktu_masuk_time' => $now->toTimeString(),
+                    'durasi_hadir' => 0, // Durasi awal 0 karena baru masuk
+                    'status_kehadiran' => $statusKehadiran,
+                    'keterangan' => $keterangan,
+                    'selfiemasuk' => $selfiePath, // Path relatif ke storage/app
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ]);
 
-            $message = 'Absensi masuk berhasil dicatat.';
-            if ($statusKehadiran === 'terlambat') {
-                $selisihMenit = $shiftStart->diffInMinutes($now);
-                $message .= ' (Terlambat ' . $this->formatDurasi($selisihMenit) . ')';
+                // Log untuk debugging
+                \Log::info('Absensi masuk berhasil dibuat', [
+                    'absensi_id' => $absensi->id,
+                    'user_id' => $userId,
+                    'jadwal_id' => $jadwalShift->id,
+                    'tanggal' => $now->toDateString(),
+                    'waktu_masuk' => $now->toTimeString(),
+                    'status' => $statusKehadiran
+                ]);
+
+                $message = 'Absensi masuk berhasil dicatat.';
+                if ($statusKehadiran === 'terlambat') {
+                    $selisihMenit = $shiftStart->diffInMinutes($now);
+                    $message .= ' (Terlambat ' . $this->formatDurasi($selisihMenit) . ')';
+                }
+
+                return response()->json([
+                    'message' => $message,
+                    'waktu_masuk' => $now->format('H:i:s'),
+                    'status' => $statusKehadiran,
+                    'selfie_path' => $selfiePath,
+                    'absensi_id' => $absensi->id // Tambahkan ID untuk konfirmasi
+                ]);
+
+            } catch (\Exception $e) {
+                // Log error untuk debugging
+                \Log::error('Gagal membuat absensi masuk', [
+                    'error' => $e->getMessage(),
+                    'user_id' => $userId,
+                    'jadwal_id' => $jadwalShift->id,
+                    'trace' => $e->getTraceAsString()
+                ]);
+
+                return response()->json([
+                    'message' => 'Gagal menyimpan data absensi. Silakan coba lagi.',
+                    'error' => $e->getMessage()
+                ], 500);
             }
-
-            return response()->json([
-                'message' => $message,
-                'waktu_masuk' => $now->format('H:i:s'),
-                'status' => $statusKehadiran,
-                'selfie_path' => $selfiePath
-            ]);
         }
     }
 
