@@ -228,12 +228,6 @@ class RekapAbsensiGajiResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->label('Lihat'),
-                    
-                Tables\Actions\EditAction::make()
-                    ->label('Edit')
-                    ->visible(fn ($record) => $record && ($record->status_rekap ?? 'draft') === 'draft'),
                     
                 Tables\Actions\Action::make('approve')
                     ->label('Setujui')
@@ -279,8 +273,6 @@ class RekapAbsensiGajiResource extends Resource
                     ->url(fn ($record) => $record ? route('slip-gaji.show', $record->id) : '#')
                     ->openUrlInNewTab(),
                     
-                Tables\Actions\DeleteAction::make()
-                    ->visible(fn ($record) => $record && ($record->status_rekap ?? 'draft') === 'draft'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\RekapAbsensiGaji;
+use App\Models\Gaji;
 use App\Models\User;
 use App\Models\SettingGaji;
 use Carbon\Carbon;
@@ -100,6 +101,39 @@ class GenerateRekapAbsensiGaji extends Command
                     $periodeAkhir,
                     $settingGajiId
                 );
+
+                // Cek apakah data gaji sudah ada
+                $existingGaji = Gaji::where('user_id', $user->id)
+                    ->where('periode_awal', $periodeAwal)
+                    ->where('periode_akhir', $periodeAkhir)
+                    ->first();
+
+                if ($existingGaji && !$force) {
+                    $this->newLine();
+                    $this->warn("⚠️ Data gaji untuk {$user->name} periode {$month} sudah ada. Gunakan --force untuk regenerate.");
+                } else {
+                    // Jika force atau belum ada, hapus yang lama dan buat baru
+                    if ($existingGaji && $force) {
+                        $existingGaji->delete();
+                    }
+
+                    // Buat data gaji baru dengan periode yang sama dengan rekap
+                    $gaji = Gaji::create([
+                        'user_id' => $user->id,
+                        'setting_gaji_id' => $settingGajiId,
+                        'periode_awal' => $periodeAwal,
+                        'periode_akhir' => $periodeAkhir,
+                        'total_jam_kerja' => $rekap->total_jam_kerja ?? 0,
+                        'total_gaji' => 0 // Akan dihitung setelah ini
+                    ]);
+
+                    // Hitung total gaji
+                    $gaji->total_gaji = $gaji->calculateTotalGaji();
+                    $gaji->save();
+
+                    $this->newLine();
+                    $this->info("✅ Data gaji untuk {$user->name} berhasil dibuat/diperbarui");
+                }
 
                 $successCount++;
                 
