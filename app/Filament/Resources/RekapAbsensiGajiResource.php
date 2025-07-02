@@ -145,7 +145,7 @@ class RekapAbsensiGajiResource extends Resource
                     ->formatStateUsing(function ($state) {
                         return match($state) {
                             'draft' => 'Draft',
-                            'approved' => 'Disetujui',
+                            'approved' => 'approved',
                             'paid' => 'Dibayar',
                             default => $state ?? 'Draft'
                         };
@@ -167,7 +167,7 @@ class RekapAbsensiGajiResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                     
                 Tables\Columns\TextColumn::make('approver.name')
-                    ->label('Disetujui Oleh')
+                    ->label('approved Oleh')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
@@ -198,7 +198,7 @@ class RekapAbsensiGajiResource extends Resource
                     ->label('Status')
                     ->options([
                         'draft' => 'Draft',
-                        'approved' => 'Disetujui', 
+                        'approved' => 'approved', 
                         'paid' => 'Dibayar',
                     ]),
                     
@@ -236,17 +236,17 @@ class RekapAbsensiGajiResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Setujui Rekap Gaji')
                     ->modalDescription('Apakah Anda yakin ingin menyetujui rekap gaji ini?')
-                    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap !== 'disetujui')
+                    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap !== 'approved')
                     ->action(function (RekapAbsensiGaji $record) {
                         $record->update([
-                            'status_rekap' => 'disetujui',
+                            'status_rekap' => 'approved',
                             'approved_by' => auth()->id(),
                             'approved_at' => now(),
                             'is_final' => true,
                         ]);
                         
                         Notification::make()
-                            ->title('Rekap Berhasil Disetujui')
+                            ->title('Rekap Berhasil approved')
                             ->success()
                             ->send();
                     }),
@@ -256,7 +256,7 @@ class RekapAbsensiGajiResource extends Resource
                     ->label('Slip Gaji')
                     ->icon('heroicon-m-document-arrow-down')
                     ->color('primary')
-                    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap === 'disetujui')
+                    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap === 'approved')
                     ->action(function (RekapAbsensiGaji $record) {
                         // Generate PDF slip gaji
                         $pdf = PDF::loadView('slip-gaji.template', [
@@ -279,7 +279,7 @@ class RekapAbsensiGajiResource extends Resource
                     ->label('Lihat Slip')
                     ->icon('heroicon-m-eye')
                     ->color('gray')
-                    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap === 'disetujui')
+                    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap === 'approved')
                     ->modalContent(function (RekapAbsensiGaji $record) {
                         return view('slip-gaji.modal', [
                             'rekap' => $record,
@@ -313,7 +313,7 @@ class RekapAbsensiGajiResource extends Resource
                                 }
                             }
                             Notification::make()
-                                ->title("{$count} rekap berhasil disetujui")
+                                ->title("{$count} rekap berhasil approved")
                                 ->success()
                                 ->send();
                         }),
