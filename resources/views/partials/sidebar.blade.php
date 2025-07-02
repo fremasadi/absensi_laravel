@@ -13,11 +13,11 @@
             <i class="fas fa-fw fa-tachometer-alt"></i>
             <span>Dashboard</span>
         </a>
-        <a class="nav-link" href="{{ url('/barcode') }}">
+        <a class="nav-link" href="{{ url('/barcode-masuk') }}">
             <i class="fas fa-qrcode"></i>
             <span>Barcode Masuk</span>
         </a>
-        <a class="nav-link" href="{{ url('/barcode') }}">
+        <a class="nav-link" href="{{ url('/barcode-keluar') }}">
             <i class="fas fa-qrcode"></i>
             <span>Barcode Pulang</span>
         </a>
