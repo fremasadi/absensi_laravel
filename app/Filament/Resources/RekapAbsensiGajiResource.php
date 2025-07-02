@@ -287,7 +287,28 @@ class RekapAbsensiGajiResource extends Resource
                     })
                     ->modalWidth('4xl')
                     ->modalHeading(fn (RekapAbsensiGaji $record) => 'Slip Gaji - ' . $record->user->name),
-            
+            // Action untuk Unapprove (jika diperlukan)
+    Tables\Actions\Action::make('unapprove')
+    ->label('Batal Setujui')
+    ->icon('heroicon-m-x-circle')
+    ->color('danger')
+    ->requiresConfirmation()
+    ->modalHeading('Batalkan Persetujuan')
+    ->modalDescription('Apakah Anda yakin ingin membatalkan persetujuan rekap gaji ini?')
+    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap === 'disetujui')
+    ->action(function (RekapAbsensiGaji $record) {
+        $record->update([
+            'status_rekap' => 'pending',
+            'approved_by' => null,
+            'approved_at' => null,
+            'is_final' => false,
+        ]);
+        
+        Notification::make()
+            ->title('Persetujuan Berhasil Dibatalkan')
+            ->success()
+            ->send();
+    }),
             
             ])
             ->bulkActions([
