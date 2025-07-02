@@ -26,7 +26,8 @@ Route::get('/dashboard', function () {
 Route::middleware(['auth', EnsureRoleIsUser::class])->group(function () {
     Route::resource('permintaan-izin', PermintaanIzinController::class);
     Route::patch('permintaan-izin/{permintaanIzin}/update-status', [PermintaanIzinController::class, 'updateStatus'])->name('permintaan-izin.update-status');
-    Route::get('/barcode', [BarcodeController::class, 'showBarcode']);
+    Route::get('/barcode-masuk', [BarcodeController::class, 'showBarcodeMasuk']);
+    Route::get('/barcode-keluar', [BarcodeController::class, 'showBarcodeKeluar']);
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
