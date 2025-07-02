@@ -60,18 +60,6 @@ class GajiResource extends Resource
                     ->label('Total Gaji')
                     ->content(fn ($record) => 'Rp ' . number_format($record->total_gaji, 0, ',', '.')),
 
-                // Form yang bisa diubah
-                Forms\Components\Select::make('status_pembayaran')
-                    ->label('Status Pembayaran')
-                    ->options([
-                        'belum_dibayar' => 'Belum Dibayar',
-                        'sudah_dibayar' => 'Sudah Dibayar'
-                    ])
-                    ->required()
-                    ->default('belum_dibayar'),
-
-                Forms\Components\Textarea::make('catatan')
-                    ->columnSpanFull(),
             ]);
     }
 
@@ -98,8 +86,6 @@ class GajiResource extends Resource
                 Tables\Columns\TextColumn::make('total_gaji')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('status_pembayaran')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),
@@ -113,16 +99,9 @@ class GajiResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('unduh_slip')
-                    ->label('Slip Gaji')
-                    ->icon('heroicon-o-document-text')
-                    ->url(fn ($record) => route('gaji.downloadSlipGaji', $record->id))
-                    ->openUrlInNewTab()
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc'); // Urutkan secara descending berdasarkan `created_at`
@@ -140,8 +119,7 @@ class GajiResource extends Resource
     {
         return [
             'index' => Pages\ListGajis::route('/'),
-            'create' => Pages\CreateGaji::route('/create'),
-            'edit' => Pages\EditGaji::route('/{record}/edit'),
+           
         ];
     }
 }
