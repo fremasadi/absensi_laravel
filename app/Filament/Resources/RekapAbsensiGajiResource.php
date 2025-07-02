@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\PDF;
 
 class RekapAbsensiGajiResource extends Resource
 {
@@ -151,10 +152,7 @@ class RekapAbsensiGajiResource extends Resource
                         };
                     }),
                     
-                Tables\Columns\IconColumn::make('is_final')
-                    ->label('Final')
-                    ->boolean()
-                    ->alignCenter(),
+            
                     
                 Tables\Columns\TextColumn::make('tanggal_rekap')
                     ->label('Tgl Rekap')
