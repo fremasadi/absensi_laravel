@@ -7,6 +7,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Models\JadwalShift;
 use App\Models\Shift;
 use App\Models\PermintaanIzin;
+use App\Models\Absensi;
 use Carbon\Carbon;
 
 class BarcodeController extends Controller
@@ -53,6 +54,20 @@ class BarcodeController extends Controller
             return view('barcode-masuk', [
                 'barcode' => null,
                 'message' => 'Data shift tidak ditemukan.'
+            ]);
+        }
+
+        // Cek apakah sudah absen masuk hari ini
+        $absensiMasuk = Absensi::where('id_user', $user->id)
+            ->where('id_jadwal', $jadwal->id)
+            ->whereDate('tanggal_absen', $today)
+            ->whereNotNull('waktu_masuk_time')
+            ->first();
+
+        if ($absensiMasuk) {
+            return view('barcode-masuk', [
+                'barcode' => null,
+                'message' => 'Anda sudah melakukan absensi masuk untuk hari ini.'
             ]);
         }
 
@@ -142,6 +157,28 @@ class BarcodeController extends Controller
             ]);
         }
 
+        // Cek apakah sudah absen masuk hari ini
+        $absensiMasuk = Absensi::where('id_user', $user->id)
+            ->where('id_jadwal', $jadwal->id)
+            ->whereDate('tanggal_absen', $today)
+            ->whereNotNull('waktu_masuk_time')
+            ->first();
+
+        if (!$absensiMasuk) {
+            return view('barcode-keluar', [
+                'barcode' => null,
+                'message' => 'Anda harus melakukan absensi masuk terlebih dahulu sebelum dapat melakukan absensi keluar.'
+            ]);
+        }
+
+        // Cek apakah sudah absen keluar hari ini
+        if ($absensiMasuk->waktu_keluar_time) {
+            return view('barcode-keluar', [
+                'barcode' => null,
+                'message' => 'Anda sudah melakukan absensi keluar untuk hari ini.'
+            ]);
+        }
+
         // Data shift
         $shift = $jadwal->shift;
         $shiftName = $shift->name;
@@ -155,22 +192,24 @@ class BarcodeController extends Controller
             $shiftEnd = $shiftEnd->addDay();
         }
 
-        // TAMBAHAN: Validasi apakah waktu sekarang dalam rentang shift
-        $isWithinShiftTime = $this->isWithinShiftTime($now, $shiftStart, $shiftEnd);
-        
-        if (!$isWithinShiftTime) {
+        // Hitung waktu minimum untuk absen keluar (1 jam setelah shift berakhir)
+        $minimumExitTime = $shiftEnd->copy()->addHour();
+
+        // Validasi apakah waktu sekarang sudah mencapai waktu minimum untuk absen keluar
+        if ($now->lt($minimumExitTime)) {
             return view('barcode-keluar', [
                 'barcode' => null,
                 'shift' => $shift,
                 'shiftName' => $shiftName,
                 'shiftStart' => $shiftStart,
                 'shiftEnd' => $shiftEnd,
-                'message' => "Barcode absensi hanya tersedia pada jam shift {$shiftName} ({$shiftStart->format('H:i')} - {$shiftEnd->format('H:i')}). Waktu sekarang: {$now->format('H:i')}"
+                'minimumExitTime' => $minimumExitTime,
+                'message' => "Barcode absensi keluar akan tersedia mulai pukul {$minimumExitTime->format('H:i')} (1 jam setelah shift {$shiftName} berakhir). Waktu sekarang: {$now->format('H:i')}"
             ]);
         }
 
-        // Generate barcode hanya jika dalam rentang waktu shift
-        $barcodeData = $user->id . '|' . $shift->id . '|' . $now->format('Y-m-d H:i:s');
+        // Generate barcode untuk absen keluar
+        $barcodeData = $user->id . '|' . $shift->id . '|' . $now->format('Y-m-d H:i:s') . '|keluar';
         $barcode = QrCode::size(200)->generate($barcodeData);
 
         return view('barcode-keluar', [
@@ -179,7 +218,8 @@ class BarcodeController extends Controller
             'shiftName' => $shiftName,
             'shiftStart' => $shiftStart,
             'shiftEnd' => $shiftEnd,
-            'message' => "Barcode absensi untuk {$shiftName} ({$shiftStart->format('H:i')} - {$shiftEnd->format('H:i')})"
+            'minimumExitTime' => $minimumExitTime,
+            'message' => "Barcode absensi keluar untuk {$shiftName}. Shift berakhir: {$shiftEnd->format('H:i')}"
         ]);
     }
 
