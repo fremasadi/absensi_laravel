@@ -311,33 +311,33 @@ class RekapAbsensiGajiResource extends Resource
     }),
             
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn () => auth()->user()->can('delete_rekap')),
+            // ->bulkActions([
+            //     Tables\Actions\BulkActionGroup::make([
+            //         Tables\Actions\DeleteBulkAction::make()
+            //             ->visible(fn () => auth()->user()->can('delete_rekap')),
                         
-                    Tables\Actions\BulkAction::make('bulk_approve')
-                        ->label('Setujui Terpilih')
-                        ->icon('heroicon-o-check-circle')
-                        ->color('success')
-                        ->requiresConfirmation()
-                        ->modalHeading('Setujui Rekap Terpilih')
-                        ->modalDescription('Apakah Anda yakin ingin menyetujui semua rekap yang dipilih?')
-                        ->action(function ($records) {
-                            $count = 0;
-                            foreach ($records as $record) {
-                                if ($record && ($record->status_rekap ?? 'draft') === 'draft') {
-                                    $record->approve(auth()->id());
-                                    $count++;
-                                }
-                            }
-                            Notification::make()
-                                ->title("{$count} rekap berhasil approved")
-                                ->success()
-                                ->send();
-                        }),
-                ]),
-            ])
+            //         Tables\Actions\BulkAction::make('bulk_approve')
+            //             ->label('Setujui Terpilih')
+            //             ->icon('heroicon-o-check-circle')
+            //             ->color('success')
+            //             ->requiresConfirmation()
+            //             ->modalHeading('Setujui Rekap Terpilih')
+            //             ->modalDescription('Apakah Anda yakin ingin menyetujui semua rekap yang dipilih?')
+            //             ->action(function ($records) {
+            //                 $count = 0;
+            //                 foreach ($records as $record) {
+            //                     if ($record && ($record->status_rekap ?? 'draft') === 'draft') {
+            //                         $record->approve(auth()->id());
+            //                         $count++;
+            //                     }
+            //                 }
+            //                 Notification::make()
+            //                     ->title("{$count} rekap berhasil approved")
+            //                     ->success()
+            //                     ->send();
+            //             }),
+            //     ]),
+            // ])
             ->defaultSort('tanggal_rekap', 'desc')
             ->striped()
             ->paginated([10, 25, 50, 100]);
