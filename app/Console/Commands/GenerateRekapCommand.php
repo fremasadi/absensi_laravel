@@ -6,7 +6,6 @@ use Illuminate\Console\Command;
 use App\Models\RekapAbsensiGaji;
 use App\Models\Gaji;
 use App\Models\User;
-use App\Models\SettingGaji;
 use Carbon\Carbon;
 
 class GenerateRekapAbsensiGaji extends Command
@@ -16,35 +15,31 @@ class GenerateRekapAbsensiGaji extends Command
      */
     protected $signature = 'rekap:generate 
                             {--user= : ID User tertentu (opsional)}
-                            {--month= : Bulan dalam format YYYY-MM (default: bulan lalu)}
+                            {--gaji-id= : ID Gaji untuk mengambil periode yang sama}
                             {--periode-awal= : Tanggal periode awal (YYYY-MM-DD)}
                             {--periode-akhir= : Tanggal periode akhir (YYYY-MM-DD)}
-                            {--gaji-id= : ID Gaji untuk mengambil periode yang sama}
-                            {--setting-gaji= : ID Setting Gaji (default: ambil yang aktif)}
                             {--force : Force regenerate jika sudah ada}';
 
     /**
      * The console command description.
      */
-    protected $description = 'Generate rekap absensi dan gaji untuk karyawan';
+    protected $description = 'Generate rekap absensi dengan periode yang sama dengan data gaji';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('🚀 Memulai proses generate rekap absensi gaji...');
+        $this->info('🚀 Memulai proses generate rekap absensi...');
 
         // Get parameters
         $userId = $this->option('user');
-        $month = $this->option('month');
+        $gajiId = $this->option('gaji-id');
         $periodeAwalInput = $this->option('periode-awal');
         $periodeAkhirInput = $this->option('periode-akhir');
-        $gajiId = $this->option('gaji-id');
-        $settingGajiId = $this->option('setting-gaji');
         $force = $this->option('force');
 
-        // Tentukan periode berdasarkan prioritas input
+        // Tentukan periode
         if ($gajiId) {
             // Ambil periode dari data gaji yang sudah ada
             $gaji = Gaji::find($gajiId);
@@ -54,46 +49,51 @@ class GenerateRekapAbsensiGaji extends Command
             }
             $periodeAwal = $gaji->periode_awal->toDateString();
             $periodeAkhir = $gaji->periode_akhir->toDateString();
-            $settingGajiId = $settingGajiId ?: $gaji->setting_gaji_id;
-            $this->info("📋 Menggunakan periode dari gaji ID {$gajiId}");
+            $settingGajiId = $gaji->setting_gaji_id;
+            $this->info("📋 Menggunakan periode dari gaji ID {$gajiId}: {$periodeAwal} s/d {$periodeAkhir}");
             
         } elseif ($periodeAwalInput && $periodeAkhirInput) {
-            // Gunakan periode custom yang diinput manual
+            // Gunakan periode custom
             try {
                 $periodeAwal = Carbon::createFromFormat('Y-m-d', $periodeAwalInput)->toDateString();
                 $periodeAkhir = Carbon::createFromFormat('Y-m-d', $periodeAkhirInput)->toDateString();
+                
+                // Cari setting gaji yang aktif
+                $gaji = Gaji::where('periode_awal', $periodeAwal)
+                           ->where('periode_akhir', $periodeAkhir)
+                           ->first();
+                
+                if ($gaji) {
+                    $settingGajiId = $gaji->setting_gaji_id;
+                } else {
+                    $this->error('❌ Tidak ditemukan data gaji dengan periode tersebut.');
+                    return 1;
+                }
+                
             } catch (\Exception $e) {
                 $this->error('❌ Format tanggal tidak valid. Gunakan format YYYY-MM-DD');
                 return 1;
             }
             
         } else {
-            // Fallback ke bulan penuh jika tidak ada input periode
-            $month = $month ?: Carbon::now()->subMonth()->format('Y-m');
-            try {
-                $carbonMonth = Carbon::createFromFormat('Y-m', $month);
-                $periodeAwal = $carbonMonth->startOfMonth()->toDateString();
-                $periodeAkhir = $carbonMonth->endOfMonth()->toDateString();
-            } catch (\Exception $e) {
-                $this->error('❌ Format bulan tidak valid. Gunakan format YYYY-MM (contoh: 2024-12)');
-                return 1;
-            }
-        }
-
-        $this->info("📅 Periode: {$periodeAwal} s/d {$periodeAkhir}");
-
-        // Get setting gaji
-        if (!$settingGajiId) {
-            $settingGaji = SettingGaji::first();
-            if (!$settingGaji) {
-                $this->error('❌ Setting gaji tidak ditemukan. Harap buat setting gaji terlebih dahulu.');
-                return 1;
-            }
-            $settingGajiId = $settingGaji->id;
+            $this->error('❌ Harap tentukan periode dengan --gaji-id atau --periode-awal dan --periode-akhir');
+            return 1;
         }
 
         // Get users
-        $users = $userId ? User::where('id', $userId)->get() : User::all();
+        if ($userId) {
+            $users = User::where('id', $userId)->get();
+        } elseif ($gajiId) {
+            // Jika menggunakan gaji-id, ambil user dari gaji tersebut
+            $users = User::where('id', $gaji->user_id)->get();
+        } else {
+            // Jika periode custom, ambil semua user yang ada gaji di periode tersebut
+            $userIds = Gaji::where('periode_awal', $periodeAwal)
+                          ->where('periode_akhir', $periodeAkhir)
+                          ->pluck('user_id')
+                          ->unique();
+            $users = User::whereIn('id', $userIds)->get();
+        }
 
         if ($users->isEmpty()) {
             $this->error('❌ User tidak ditemukan.');
@@ -119,7 +119,7 @@ class GenerateRekapAbsensiGaji extends Command
 
                 if ($existing && !$force) {
                     $this->newLine();
-                    $this->warn("⚠️ Rekap untuk {$user->name} periode {$month} sudah ada. Gunakan --force untuk regenerate.");
+                    $this->warn("⚠️ Rekap untuk {$user->name} periode {$periodeAwal} s/d {$periodeAkhir} sudah ada. Gunakan --force untuk regenerate.");
                     $bar->advance();
                     continue;
                 }
@@ -131,12 +131,6 @@ class GenerateRekapAbsensiGaji extends Command
                     $periodeAkhir,
                     $settingGajiId
                 );
-
-                // Tidak perlu membuat data gaji baru karena sudah ada
-                // Hanya generate rekap absensi dengan periode yang sama
-                
-                $this->newLine();
-                $this->info("✅ Rekap absensi untuk {$user->name} berhasil dibuat dengan periode {$periodeAwal} s/d {$periodeAkhir}");
 
                 $successCount++;
                 
@@ -155,6 +149,7 @@ class GenerateRekapAbsensiGaji extends Command
         // Summary
         $this->info("✅ Proses selesai!");
         $this->info("📊 Summary:");
+        $this->info("   - Periode: {$periodeAwal} s/d {$periodeAkhir}");
         $this->info("   - Berhasil: {$successCount}");
         $this->info("   - Error: {$errorCount}");
         $this->info("   - Total: " . ($successCount + $errorCount));
