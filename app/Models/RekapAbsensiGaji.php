@@ -14,34 +14,40 @@ class RekapAbsensiGaji extends Model
 
     protected $fillable = [
         'user_id',
+        'gaji_id',
+        'setting_gaji_id',
         'periode_awal',
         'periode_akhir',
+        'bulan_tahun',
         'total_hari_kerja',
-        'total_jam_kerja',
-        'total_keterlambatan_menit',
-        'total_pulang_cepat_menit',
-        'total_tidak_hadir',
+        'total_hadir',
+        'total_sakit',
         'total_izin',
+        'total_alpha',
+        'total_terlambat',
+        'total_jam_kerja',
+        'total_menit_kerja',
         'gaji_per_jam',
-        'total_gaji_kotor',
-        'potongan_keterlambatan',
-        'potongan_tidak_hadir',
-        'total_gaji_bersih',
-        'status_pembayaran',
-        'catatan'
+
+        'total_gaji',
+        'status_rekap',
+        'keterangan',
+        'is_final',
+        'tanggal_rekap',
+        'created_by',
+        'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
         'periode_awal' => 'date',
         'periode_akhir' => 'date',
+        'tanggal_rekap' => 'datetime',
+        'approved_at' => 'datetime',
+        'is_final' => 'boolean',
         'total_jam_kerja' => 'decimal:2',
-        'total_keterlambatan_menit' => 'integer',
-        'total_pulang_cepat_menit' => 'integer',
         'gaji_per_jam' => 'decimal:2',
-        'total_gaji_kotor' => 'decimal:2',
-        'potongan_keterlambatan' => 'decimal:2',
-        'potongan_tidak_hadir' => 'decimal:2',
-        'total_gaji_bersih' => 'decimal:2'
+        'total_gaji' => 'decimal:2',
     ];
 
     /**
@@ -53,160 +59,166 @@ class RekapAbsensiGaji extends Model
     }
 
     /**
-     * Generate rekap untuk user tertentu dalam periode tertentu
+     * Relasi ke model Gaji
      */
-    public static function generateRekap($userId, $periodeAwal, $periodeAkhir)
+    public function gaji()
     {
-        $periodeAwal = Carbon::parse($periodeAwal);
-        $periodeAkhir = Carbon::parse($periodeAkhir);
+        return $this->belongsTo(Gaji::class, 'gaji_id');
+    }
 
+    /**
+     * Relasi ke model SettingGaji
+     */
+    public function settingGaji()
+    {
+        return $this->belongsTo(SettingGaji::class, 'setting_gaji_id');
+    }
+
+    /**
+     * Relasi ke user yang membuat rekap
+     */
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Relasi ke user yang approve rekap
+     */
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Scope untuk filter berdasarkan bulan tahun
+     */
+    public function scopeByBulanTahun($query, $bulanTahun)
+    {
+        return $query->where('bulan_tahun', $bulanTahun);
+    }
+
+    /**
+     * Scope untuk filter berdasarkan status
+     */
+    public function scopeByStatus($query, $status)
+    {
+        return $query->where('status_rekap', $status);
+    }
+
+    /**
+     * Scope untuk rekap yang sudah final
+     */
+    public function scopeFinal($query)
+    {
+        return $query->where('is_final', true);
+    }
+
+    /**
+     * Method untuk generate rekap absensi dan gaji
+     */
+    public static function generateRekap($userId, $periodeAwal, $periodeAkhir, $settingGajiId)
+    {
         // Ambil data absensi dalam periode
-        $absensiData = Absensi::with(['user', 'jadwalShift.shift'])
-            ->where('id_user', $userId)
+        $absensiData = Absensi::where('id_user', $userId)
             ->whereBetween('tanggal_absen', [$periodeAwal, $periodeAkhir])
             ->get();
 
-        // Ambil setting gaji terbaru untuk user
-        $user = User::find($userId);
-        $settingGaji = SettingGaji::latest()->first(); // atau bisa disesuaikan dengan relasi user
-
-        // Hitung statistik
-        $totalHariKerja = $absensiData->count();
-        $totalJamKerja = 0;
-        $totalKeterlambatanMenit = 0;
-        $totalPulangCepatMenit = 0;
-        $totalTidakHadir = 0;
-        $totalIzin = 0;
-
-        foreach ($absensiData as $absensi) {
-            // Hitung jam kerja
-            if ($absensi->waktu_masuk_time && $absensi->waktu_keluar_time) {
-                $masuk = Carbon::parse($absensi->tanggal_absen . ' ' . $absensi->waktu_masuk_time);
-                $keluar = Carbon::parse($absensi->tanggal_absen . ' ' . $absensi->waktu_keluar_time);
-                
-                // Handle jika keluar di hari berikutnya
-                if ($keluar->lt($masuk)) {
-                    $keluar->addDay();
-                }
-                
-                $jamKerja = $keluar->diffInHours($masuk);
-                $totalJamKerja += $jamKerja;
-
-                // Hitung keterlambatan
-                if ($absensi->jadwalShift && $absensi->jadwalShift->shift) {
-                    $shiftMulai = Carbon::parse($absensi->tanggal_absen . ' ' . $absensi->jadwalShift->shift->start_time);
-                    if ($masuk->gt($shiftMulai)) {
-                        $totalKeterlambatanMenit += $masuk->diffInMinutes($shiftMulai);
-                    }
-
-                    // Hitung pulang cepat
-                    $shiftSelesai = Carbon::parse($absensi->tanggal_absen . ' ' . $absensi->jadwalShift->shift->end_time);
-                    if ($shiftSelesai->lt($shiftMulai)) {
-                        $shiftSelesai->addDay();
-                    }
-                    if ($keluar->lt($shiftSelesai)) {
-                        $totalPulangCepatMenit += $shiftSelesai->diffInMinutes($keluar);
-                    }
-                }
-            } else {
-                // Tidak hadir atau izin
-                if ($absensi->status_kehadiran == 'izin') {
-                    $totalIzin++;
-                } else {
-                    $totalTidakHadir++;
-                }
-            }
+        // Ambil setting gaji
+        $settingGaji = SettingGaji::find($settingGajiId);
+        
+        if (!$settingGaji) {
+            throw new \Exception('Setting gaji tidak ditemukan');
         }
 
-        // Hitung gaji
-        $gajiPerJam = $settingGaji ? $settingGaji->gaji_per_jam : 0;
-        $totalGajiKotor = $totalJamKerja * $gajiPerJam;
-        
-        // Hitung potongan (misal: per menit keterlambatan dipotong 1000, per hari tidak hadir dipotong gaji 8 jam)
-        $potonganKeterlambatan = ($totalKeterlambatanMenit / 60) * $gajiPerJam * 0.5; // 50% dari gaji per jam
-        $potonganTidakHadir = $totalTidakHadir * 8 * $gajiPerJam; // 8 jam per hari tidak hadir
-        
-        $totalGajiBersih = $totalGajiKotor - $potonganKeterlambatan - $potonganTidakHadir;
+        // Hitung statistik absensi
+        $totalHadir = $absensiData->where('status_kehadiran', 'hadir')->count();
+        $totalSakit = $absensiData->where('status_kehadiran', 'sakit')->count();
+        $totalIzin = $absensiData->where('status_kehadiran', 'izin')->count();
+        $totalAlpha = $absensiData->where('status_kehadiran', 'tidak hadir')->count();
+        $totalTerlambat = $absensiData->whereNotNull('durasi_terlambat')->count();
 
-        // Simpan atau update rekap
-        return self::updateOrCreate([
+        // Hitung total jam kerja (dalam menit, kemudian convert ke jam)
+        $totalMenitKerja = $absensiData->where('status_kehadiran', 'hadir')->sum('durasi_hadir');
+        $totalJamKerja = $totalMenitKerja / 60; // convert ke jam
+
+        // Hitung gaji - sederhana: total_jam_kerja * gaji_per_jam
+        $totalGaji = $totalJamKerja * $settingGaji->gaji_per_jam;
+
+        // Buat bulan_tahun dari periode_awal
+        $bulanTahun = Carbon::parse($periodeAwal)->format('Y-m');
+
+        // Cek apakah rekap sudah ada
+        $existingRekap = self::where('user_id', $userId)
+            ->where('periode_awal', $periodeAwal)
+            ->where('periode_akhir', $periodeAkhir)
+            ->first();
+
+        $data = [
             'user_id' => $userId,
+            'setting_gaji_id' => $settingGajiId,
             'periode_awal' => $periodeAwal,
             'periode_akhir' => $periodeAkhir,
-        ], [
-            'total_hari_kerja' => $totalHariKerja,
-            'total_jam_kerja' => $totalJamKerja,
-            'total_keterlambatan_menit' => $totalKeterlambatanMenit,
-            'total_pulang_cepat_menit' => $totalPulangCepatMenit,
-            'total_tidak_hadir' => $totalTidakHadir,
+            'bulan_tahun' => $bulanTahun,
+            'total_hari_kerja' => $absensiData->count(),
+            'total_hadir' => $totalHadir,
+            'total_sakit' => $totalSakit,
             'total_izin' => $totalIzin,
-            'gaji_per_jam' => $gajiPerJam,
-            'total_gaji_kotor' => $totalGajiKotor,
-            'potongan_keterlambatan' => $potonganKeterlambatan,
-            'potongan_tidak_hadir' => $potonganTidakHadir,
-            'total_gaji_bersih' => $totalGajiBersih,
-            'status_pembayaran' => 'belum_dibayar',
+            'total_alpha' => $totalAlpha,
+            'total_terlambat' => $totalTerlambat,
+            'total_jam_kerja' => $totalJamKerja,
+            'total_menit_kerja' => $totalMenitKerja,
+            'gaji_per_jam' => $settingGaji->gaji_per_jam,
+            'total_gaji' => $totalGaji,
+            'tanggal_rekap' => now(),
+        ];
+
+        if ($existingRekap) {
+            $existingRekap->update($data);
+            return $existingRekap;
+        } else {
+            return self::create($data);
+        }
+    }
+
+    /**
+     * Method untuk approve rekap
+     */
+    public function approve($approvedBy)
+    {
+        $this->update([
+            'status_rekap' => 'approved',
+            'approved_by' => $approvedBy,
+            'approved_at' => now(),
+            'is_final' => true,
         ]);
     }
 
     /**
-     * Generate rekap untuk semua user dalam periode tertentu
+     * Method untuk mark as paid
      */
-    public static function generateRekapSemua($periodeAwal, $periodeAkhir)
+    public function markAsPaid()
     {
-        $users = User::all();
-        $results = [];
-
-        foreach ($users as $user) {
-            $results[] = self::generateRekap($user->id, $periodeAwal, $periodeAkhir);
-        }
-
-        return $results;
+        $this->update([
+            'status_rekap' => 'paid'
+        ]);
     }
 
     /**
-     * Get detail absensi untuk rekap ini
-     */
-    public function getDetailAbsensi()
-    {
-        return Absensi::with(['jadwalShift.shift'])
-            ->where('id_user', $this->user_id)
-            ->whereBetween('tanggal_absen', [$this->periode_awal, $this->periode_akhir])
-            ->orderBy('tanggal_absen')
-            ->get();
-    }
-
-    /**
-     * Format jam kerja untuk display
-     */
-    public function getFormattedJamKerjaAttribute()
-    {
-        $jam = floor($this->total_jam_kerja);
-        $menit = ($this->total_jam_kerja - $jam) * 60;
-        
-        return sprintf('%d jam %d menit', $jam, $menit);
-    }
-
-    /**
-     * Format keterlambatan untuk display
-     */
-    public function getFormattedKeterlambatanAttribute()
-    {
-        $jam = floor($this->total_keterlambatan_menit / 60);
-        $menit = $this->total_keterlambatan_menit % 60;
-        
-        return sprintf('%d jam %d menit', $jam, $menit);
-    }
-
-    /**
-     * Get persentase kehadiran
+     * Accessor untuk persentase kehadiran
      */
     public function getPersentaseKehadiranAttribute()
     {
-        $totalHariKerjaSeharusnya = $this->periode_awal->diffInDays($this->periode_akhir) + 1;
-        $totalHadir = $this->total_hari_kerja - $this->total_tidak_hadir;
-        
-        return $totalHariKerjaSeharusnya > 0 ? 
-            round(($totalHadir / $totalHariKerjaSeharusnya) * 100, 2) : 0;
+        if ($this->total_hari_kerja == 0) return 0;
+        return round(($this->total_hadir / $this->total_hari_kerja) * 100, 2);
+    }
+
+    /**
+     * Accessor untuk format periode yang readable
+     */
+    public function getFormatPeriodeAttribute()
+    {
+        return Carbon::parse($this->periode_awal)->format('d/m/Y') . ' - ' . 
+               Carbon::parse($this->periode_akhir)->format('d/m/Y');
     }
 }
