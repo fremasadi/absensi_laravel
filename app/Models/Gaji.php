@@ -17,8 +17,7 @@ class Gaji extends Model
         'periode_akhir', 
         'total_jam_kerja', 
         'total_gaji', 
-        'status_pembayaran', 
-        'catatan'
+
     ];
 
     protected $casts = [
