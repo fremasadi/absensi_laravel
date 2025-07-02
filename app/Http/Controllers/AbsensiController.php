@@ -143,14 +143,6 @@ class AbsensiController extends Controller
             $statusKehadiran = 'hadir';
             $keterangan = 'hadir';
             
-            // Jika absen setelah waktu shift dimulai, maka terlambat
-            if ($now->gt($shiftStart)) {
-                $minutesLate = $shiftStart->diffInMinutes($now);
-                if ($minutesLate > 0) { // Toleransi 0 menit
-                    $statusKehadiran = 'terlambat';
-                    $keterangan = 'terlambat ' . $minutesLate . ' menit';
-                }
-            }
 
             // Proses menyimpan file selfie masuk
             $selfieFileName = 'selfie_masuk_' . $userId . '_' . $now->format('Ymd_His') . '.' . $selfieImage->getClientOriginalExtension();
@@ -170,7 +162,7 @@ class AbsensiController extends Controller
                 'updated_at' => $now
             ]);
 
-            $responseMessage = $statusKehadiran === 'terlambat' 
+            $responseMessage = $keterangan === 'terlambat' 
                 ? 'Absensi masuk berhasil dicatat (TERLAMBAT).' 
                 : 'Absensi masuk berhasil dicatat.';
 
