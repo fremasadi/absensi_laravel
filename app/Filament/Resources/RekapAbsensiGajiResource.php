@@ -228,51 +228,69 @@ class RekapAbsensiGajiResource extends Resource
                     }),
             ])
             ->actions([
-                    
+                // Action untuk Approve Rekap
                 Tables\Actions\Action::make('approve')
                     ->label('Setujui')
-                    ->icon('heroicon-o-check-circle')
+                    ->icon('heroicon-m-check-circle')
                     ->color('success')
-                    ->visible(fn ($record) => $record && ($record->status_rekap ?? 'draft') === 'draft')
                     ->requiresConfirmation()
                     ->modalHeading('Setujui Rekap Gaji')
                     ->modalDescription('Apakah Anda yakin ingin menyetujui rekap gaji ini?')
-                    ->action(function ($record) {
-                        if ($record) {
-                            $record->approve(auth()->id());
-                            Notification::make()
-                                ->title('Rekap berhasil disetujui')
-                                ->success()
-                                ->send();
-                        }
+                    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap !== 'disetujui')
+                    ->action(function (RekapAbsensiGaji $record) {
+                        $record->update([
+                            'status_rekap' => 'disetujui',
+                            'approved_by' => auth()->id(),
+                            'approved_at' => now(),
+                            'is_final' => true,
+                        ]);
+                        
+                        Notification::make()
+                            ->title('Rekap Berhasil Disetujui')
+                            ->success()
+                            ->send();
                     }),
-                    
-                Tables\Actions\Action::make('mark_as_paid')
-                    ->label('Tandai Dibayar')
-                    ->icon('heroicon-o-currency-dollar')
-                    ->color('primary')
-                    ->visible(fn ($record) => $record && ($record->status_rekap ?? '') === 'approved')
-                    ->requiresConfirmation()
-                    ->modalHeading('Tandai Sebagai Dibayar')
-                    ->modalDescription('Apakah gaji untuk rekap ini sudah dibayarkan?')
-                    ->action(function ($record) {
-                        if ($record) {
-                            $record->markAsPaid();
-                            Notification::make()
-                                ->title('Rekap ditandai sebagai dibayar')
-                                ->success()
-                                ->send();
-                        }
-                    }),
-                    
-                Tables\Actions\Action::make('generate_slip')
+            
+                // Action untuk Generate Slip Gaji (PDF)
+                Tables\Actions\Action::make('slip_gaji')
                     ->label('Slip Gaji')
-                    ->icon('heroicon-o-document-text')
-                    ->color('info')
-                    ->visible(fn ($record) => $record && ($record->status_rekap ?? 'draft') !== 'draft')
-                    ->url(fn ($record) => $record ? route('slip-gaji.show', $record->id) : '#')
-                    ->openUrlInNewTab(),
-                    
+                    ->icon('heroicon-m-document-arrow-down')
+                    ->color('primary')
+                    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap === 'disetujui')
+                    ->action(function (RekapAbsensiGaji $record) {
+                        // Generate PDF slip gaji
+                        $pdf = PDF::loadView('slip-gaji.template', [
+                            'rekap' => $record,
+                            'user' => $record->user,
+                            'settingGaji' => $record->settingGaji,
+                        ]);
+                        
+                        $filename = "slip-gaji-{$record->user->name}-{$record->periode_awal->format('Y-m')}.pdf";
+                        
+                        return response()->streamDownload(
+                            fn () => print($pdf->output()),
+                            $filename,
+                            ['Content-Type' => 'application/pdf']
+                        );
+                    }),
+            
+                // Action untuk View Slip Gaji (Modal)
+                Tables\Actions\Action::make('view_slip')
+                    ->label('Lihat Slip')
+                    ->icon('heroicon-m-eye')
+                    ->color('gray')
+                    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap === 'disetujui')
+                    ->modalContent(function (RekapAbsensiGaji $record) {
+                        return view('slip-gaji.modal', [
+                            'rekap' => $record,
+                            'user' => $record->user,
+                            'settingGaji' => $record->settingGaji,
+                        ]);
+                    })
+                    ->modalWidth('4xl')
+                    ->modalHeading(fn (RekapAbsensiGaji $record) => 'Slip Gaji - ' . $record->user->name),
+            
+            
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
