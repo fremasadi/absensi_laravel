@@ -13,7 +13,7 @@ use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class RekapAbsensiGajiResource extends Resource
 {
