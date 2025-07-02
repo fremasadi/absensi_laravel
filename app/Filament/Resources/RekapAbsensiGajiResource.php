@@ -295,10 +295,10 @@ class RekapAbsensiGajiResource extends Resource
     ->requiresConfirmation()
     ->modalHeading('Batalkan Persetujuan')
     ->modalDescription('Apakah Anda yakin ingin membatalkan persetujuan rekap gaji ini?')
-    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap === 'disetujui')
+    ->visible(fn (RekapAbsensiGaji $record) => $record->status_rekap === 'approved')
     ->action(function (RekapAbsensiGaji $record) {
         $record->update([
-            'status_rekap' => 'pending',
+            'status_rekap' => 'draft',
             'approved_by' => null,
             'approved_at' => null,
             'is_final' => false,
