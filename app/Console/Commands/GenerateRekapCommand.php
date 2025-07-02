@@ -47,10 +47,8 @@ class GenerateRekapAbsensiGaji extends Command
                 $this->error('❌ Data gaji dengan ID tersebut tidak ditemukan.');
                 return 1;
             }
-            $periodeAwal = $gaji->periode_awal->toDateString();
-            $periodeAkhir = $gaji->periode_akhir->toDateString();
-            $settingGajiId = $gaji->setting_gaji_id;
-            $this->info("📋 Menggunakan periode dari gaji ID {$gajiId}: {$periodeAwal} s/d {$periodeAkhir}");
+            $dataGajis = collect([$gaji]);
+            $this->info("📋 Menggunakan periode dari gaji ID {$gajiId}");
             
         } elseif ($periodeAwalInput && $periodeAkhirInput) {
             // Gunakan periode custom
@@ -58,14 +56,11 @@ class GenerateRekapAbsensiGaji extends Command
                 $periodeAwal = Carbon::createFromFormat('Y-m-d', $periodeAwalInput)->toDateString();
                 $periodeAkhir = Carbon::createFromFormat('Y-m-d', $periodeAkhirInput)->toDateString();
                 
-                // Cari setting gaji yang aktif
-                $gaji = Gaji::where('periode_awal', $periodeAwal)
-                           ->where('periode_akhir', $periodeAkhir)
-                           ->first();
+                $dataGajis = Gaji::where('periode_awal', $periodeAwal)
+                               ->where('periode_akhir', $periodeAkhir)
+                               ->get();
                 
-                if ($gaji) {
-                    $settingGajiId = $gaji->setting_gaji_id;
-                } else {
+                if ($dataGajis->isEmpty()) {
                     $this->error('❌ Tidak ditemukan data gaji dengan periode tersebut.');
                     return 1;
                 }
@@ -76,60 +71,60 @@ class GenerateRekapAbsensiGaji extends Command
             }
             
         } else {
-            $this->error('❌ Harap tentukan periode dengan --gaji-id atau --periode-awal dan --periode-akhir');
-            return 1;
+            // Mode ALL - ambil semua data gaji
+            $query = Gaji::query();
+            
+            // Jika ada filter user, terapkan
+            if ($userId) {
+                $query->where('user_id', $userId);
+            }
+            
+            $dataGajis = $query->orderBy('periode_awal', 'desc')
+                              ->orderBy('user_id')
+                              ->get();
+                              
+            if ($dataGajis->isEmpty()) {
+                $this->error('❌ Tidak ditemukan data gaji.');
+                return 1;
+            }
+            
+            $this->info("📋 Mode ALL - Memproses semua data gaji ({$dataGajis->count()} data)");
         }
 
-        // Get users
-        if ($userId) {
-            $users = User::where('id', $userId)->get();
-        } elseif ($gajiId) {
-            // Jika menggunakan gaji-id, ambil user dari gaji tersebut
-            $users = User::where('id', $gaji->user_id)->get();
-        } else {
-            // Jika periode custom, ambil semua user yang ada gaji di periode tersebut
-            $userIds = Gaji::where('periode_awal', $periodeAwal)
-                          ->where('periode_akhir', $periodeAkhir)
-                          ->pluck('user_id')
-                          ->unique();
-            $users = User::whereIn('id', $userIds)->get();
-        }
-
-        if ($users->isEmpty()) {
-            $this->error('❌ User tidak ditemukan.');
-            return 1;
-        }
-
-        $this->info("👥 Akan memproses {$users->count()} user(s)");
+        $this->info("👥 Akan memproses {$dataGajis->count()} data gaji");
 
         $successCount = 0;
         $errorCount = 0;
+        $skipCount = 0;
 
         // Progress bar
-        $bar = $this->output->createProgressBar($users->count());
+        $bar = $this->output->createProgressBar($dataGajis->count());
         $bar->start();
 
-        foreach ($users as $user) {
+        foreach ($dataGajis as $gaji) {
             try {
+                $periodeAwal = $gaji->periode_awal->toDateString();
+                $periodeAkhir = $gaji->periode_akhir->toDateString();
+                $user = $gaji->user;
+
                 // Cek apakah rekap sudah ada
-                $existing = RekapAbsensiGaji::where('user_id', $user->id)
+                $existing = RekapAbsensiGaji::where('user_id', $gaji->user_id)
                     ->where('periode_awal', $periodeAwal)
                     ->where('periode_akhir', $periodeAkhir)
                     ->first();
 
                 if ($existing && !$force) {
-                    $this->newLine();
-                    $this->warn("⚠️ Rekap untuk {$user->name} periode {$periodeAwal} s/d {$periodeAkhir} sudah ada. Gunakan --force untuk regenerate.");
+                    $skipCount++;
                     $bar->advance();
                     continue;
                 }
 
                 // Generate rekap dengan periode yang sama dengan data gaji
                 $rekap = RekapAbsensiGaji::generateRekap(
-                    $user->id,
+                    $gaji->user_id,
                     $periodeAwal,
                     $periodeAkhir,
-                    $settingGajiId
+                    $gaji->setting_gaji_id
                 );
 
                 $successCount++;
@@ -137,7 +132,6 @@ class GenerateRekapAbsensiGaji extends Command
             } catch (\Exception $e) {
                 $errorCount++;
                 $this->newLine();
-                $this->error("❌ Error untuk {$user->name}: " . $e->getMessage());
             }
 
             $bar->advance();
@@ -149,10 +143,10 @@ class GenerateRekapAbsensiGaji extends Command
         // Summary
         $this->info("✅ Proses selesai!");
         $this->info("📊 Summary:");
-        $this->info("   - Periode: {$periodeAwal} s/d {$periodeAkhir}");
-        $this->info("   - Berhasil: {$successCount}");
+        $this->info("   - Total data gaji: {$dataGajis->count()}");
+        $this->info("   - Berhasil generate: {$successCount}");
+        $this->info("   - Dilewati (sudah ada): {$skipCount}");
         $this->info("   - Error: {$errorCount}");
-        $this->info("   - Total: " . ($successCount + $errorCount));
 
         return 0;
     }
