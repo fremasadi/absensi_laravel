@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class PermintaanIzinController extends Controller
 {
@@ -122,6 +123,18 @@ class PermintaanIzinController extends Controller
      */
     public function uploadBukti(Request $request, PermintaanIzin $permintaanIzin)
     {
+        // Debug: Log request details
+        Log::info('Upload bukti request', [
+            'user_id' => Auth::id(),
+            'permission_id' => $permintaanIzin->id,
+            'has_file' => $request->hasFile('image'),
+            'file_details' => $request->hasFile('image') ? [
+                'original_name' => $request->file('image')->getClientOriginalName(),
+                'size' => $request->file('image')->getSize(),
+                'mime_type' => $request->file('image')->getMimeType()
+            ] : null
+        ]);
+
         // Validasi bahwa user hanya bisa upload bukti untuk izin mereka sendiri
         if ($permintaanIzin->user_id !== Auth::id()) {
             return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk upload bukti izin ini.');
@@ -140,6 +153,7 @@ class PermintaanIzinController extends Controller
             return redirect()->back()->with('error', 'Waktu upload bukti sudah berakhir. Batas upload sampai tanggal ' . $batasUpload->format('d/m/Y'));
         }
 
+        // Validasi file
         $request->validate([
             'image' => 'required|image|mimes:jpeg,png,jpg|max:2048'
         ], [
@@ -149,25 +163,56 @@ class PermintaanIzinController extends Controller
             'image.max' => 'Ukuran file maksimal 2MB.'
         ]);
 
-        // Hapus gambar lama jika ada
-        if ($permintaanIzin->image) {
-            Storage::disk('public')->delete($permintaanIzin->image);
+        try {
+            // Pastikan folder ada
+            if (!Storage::disk('public')->exists('izin-bukti')) {
+                Storage::disk('public')->makeDirectory('izin-bukti');
+            }
+
+            // Hapus gambar lama jika ada
+            if ($permintaanIzin->image) {
+                Storage::disk('public')->delete($permintaanIzin->image);
+            }
+
+            // Upload gambar baru
+            $image = $request->file('image');
+            $imageName = 'bukti_izin_' . $permintaanIzin->id . '_' . Auth::id() . '_' . time() . '.' . $image->getClientOriginalExtension();
+            
+            // Simpan file
+            $path = $image->storeAs('izin-bukti', $imageName, 'public');
+            
+            // Path yang akan disimpan di database
+            $imagePath = 'izin-bukti/' . $imageName;
+            
+            // Update database
+            $updateResult = $permintaanIzin->update([
+                'image' => $imagePath,
+                'bukti_uploaded_at' => now()
+            ]);
+
+            // Debug: Log update result
+            Log::info('Update result', [
+                'success' => $updateResult,
+                'image_path' => $imagePath,
+                'file_exists' => Storage::disk('public')->exists($imagePath),
+                'updated_data' => $permintaanIzin->fresh()->only(['id', 'image', 'bukti_uploaded_at'])
+            ]);
+
+            if ($updateResult) {
+                return redirect()->back()->with('success', 'Bukti izin berhasil diupload.');
+            } else {
+                return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
+            }
+
+        } catch (\Exception $e) {
+            // Log error
+            Log::error('Upload bukti error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat upload: ' . $e->getMessage());
         }
-
-        // Upload gambar baru
-        $image = $request->file('image');
-        $imageName = 'bukti_izin_' . $permintaanIzin->id . '_' . Auth::id() . '_' . time() . '.' . $image->getClientOriginalExtension();
-        
-        // Simpan ke storage/app/public/izin-bukti
-        $path = $image->storeAs('izin-bukti', $imageName, 'public');
-        
-        // Update database
-        $permintaanIzin->update([
-            'image' => 'izin-bukti/' . $imageName,
-            'bukti_uploaded_at' => now()
-        ]);
-
-        return redirect()->back()->with('success', 'Bukti izin berhasil diupload.');
     }
 
     /**

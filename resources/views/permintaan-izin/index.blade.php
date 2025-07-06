@@ -74,19 +74,6 @@
                                     @endif
                                 @endif
                             </td>
-                            {{-- <td>
-                                @if(!$izin->status)
-                                    <a href="{{ route('permintaan-izin.edit', $izin) }}" class="btn btn-warning btn-sm">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-
-                                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('{{ route('permintaan-izin.destroy', $izin) }}', '{{ $izin->jenis_izin }}')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                @else
-                                    <span class="badge badge-success">Disetujui</span>
-                                @endif
-                            </td> --}}
                         </tr>
                         @endforeach
                     </tbody>
@@ -177,7 +164,12 @@
 
     // Fungsi untuk menampilkan modal upload
     function showUploadModal(izinId, tanggalMulai) {
-        document.getElementById('uploadForm').action = `/permintaan-izin/${izinId}/upload-bukti`;
+        // Perbaikan: Gunakan route helper atau URL yang benar
+        const uploadUrl = `/permintaan-izin/${izinId}/upload-bukti`;
+        
+        console.log('Setting form action to:', uploadUrl); // Debug
+        
+        document.getElementById('uploadForm').action = uploadUrl;
         document.getElementById('tanggalIzin').textContent = tanggalMulai;
         document.getElementById('imagePreview').style.display = 'none';
         document.getElementById('buktiFile').value = '';
@@ -190,6 +182,45 @@
         document.getElementById('viewImageModalLabel').textContent = `Bukti ${jenisIzin}`;
         $('#viewImageModal').modal('show');
     }
+
+    // Handle form submission dengan validasi
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        const fileInput = document.getElementById('buktiFile');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            e.preventDefault();
+            alert('Pilih file terlebih dahulu!');
+            return;
+        }
+
+        // Validasi ukuran file (2MB = 2 * 1024 * 1024 bytes)
+        if (file.size > 2 * 1024 * 1024) {
+            e.preventDefault();
+            alert('Ukuran file maksimal 2MB!');
+            return;
+        }
+
+        // Validasi tipe file
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            e.preventDefault();
+            alert('Format file harus JPG, JPEG, atau PNG!');
+            return;
+        }
+
+        // Tambahkan loading state
+        const submitButton = this.querySelector('button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        submitButton.disabled = true;
+
+        // Reset button jika ada error
+        setTimeout(() => {
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+        }, 10000); // Reset after 10 seconds if no response
+    });
 
     // Fungsi konfirmasi delete
     function confirmDelete(deleteUrl, itemName = 'data ini') {
@@ -237,6 +268,13 @@
             }
         });
     }
+
+    // Debug: Log form data saat submit
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        console.log('Form submitted with action:', this.action);
+        console.log('Form method:', this.method);
+        console.log('File selected:', document.getElementById('buktiFile').files[0]);
+    });
 </script>
 @endsection
 
