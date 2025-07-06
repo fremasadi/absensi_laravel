@@ -192,21 +192,24 @@ class BarcodeController extends Controller
             $shiftEnd = $shiftEnd->addDay();
         }
 
-        // Hitung waktu minimum untuk absen keluar (1 jam setelah shift berakhir)
-        $minimumExitTime = $shiftEnd->copy()->addHour();
+       // Waktu mulai dan akhir untuk barcode absensi keluar
+        $exitWindowStart = $shiftEnd->copy(); // Saat shift selesai
+        $exitWindowEnd = $shiftEnd->copy()->addHour(); // 1 jam setelah shift selesai
 
-        // Validasi apakah waktu sekarang sudah mencapai waktu minimum untuk absen keluar
-        if ($now->lt($minimumExitTime)) {
+        // Validasi apakah sekarang dalam rentang yang diizinkan
+        if ($now->lt($exitWindowStart) || $now->gt($exitWindowEnd)) {
             return view('barcode-keluar', [
                 'barcode' => null,
                 'shift' => $shift,
                 'shiftName' => $shiftName,
                 'shiftStart' => $shiftStart,
                 'shiftEnd' => $shiftEnd,
-                'minimumExitTime' => $minimumExitTime,
-                'message' => "Barcode absensi keluar akan tersedia mulai pukul {$minimumExitTime->format('H:i')} (1 jam setelah shift {$shiftName} berakhir). Waktu sekarang: {$now->format('H:i')}"
+                'minimumExitTime' => $exitWindowStart,
+                'maximumExitTime' => $exitWindowEnd,
+                'message' => "Barcode absensi keluar hanya tersedia dari pukul {$exitWindowStart->format('H:i')} sampai {$exitWindowEnd->format('H:i')} (1 jam setelah shift {$shiftName} berakhir). Sekarang: {$now->format('H:i')}"
             ]);
         }
+
 
         // Generate barcode untuk absen keluar
         $barcodeData = $user->id . '|' . $shift->id . '|' . $now->format('Y-m-d H:i:s') . '|keluar';
