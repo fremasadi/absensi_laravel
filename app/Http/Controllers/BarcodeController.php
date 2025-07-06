@@ -208,6 +208,7 @@ if (!$now->between($exitWindowStart, $exitWindowEnd)) {
         'exitWindowEnd' => $exitWindowEnd,
         'message' => "Barcode absensi keluar hanya tersedia dari pukul {$exitWindowStart->format('H:i')} sampai {$exitWindowEnd->format('H:i')}. Waktu sekarang: {$now->format('H:i')}"
     ]);
+    
 }
 
 
