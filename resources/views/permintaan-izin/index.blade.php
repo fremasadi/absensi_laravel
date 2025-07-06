@@ -83,46 +83,46 @@
     </div>
 
     <!-- Modal Upload Bukti -->
-    <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="uploadModalLabel">Upload Bukti Izin</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+<div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadModalLabel">Upload Bukti Izin</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                @csrf
+                <!-- Hapus @method('PATCH') karena kita menggunakan POST -->
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="buktiFile">Pilih File Bukti</label>
+                        <input type="file" class="form-control-file" id="buktiFile" name="image" required accept="image/*">
+                        <small class="form-text text-muted">
+                            Format yang diizinkan: JPG, JPEG, PNG. Maksimal 2MB.
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label>Tanggal Izin:</label>
+                        <span id="tanggalIzin" class="font-weight-bold text-primary"></span>
+                    </div>
+                    <div id="imagePreview" class="mt-3" style="display: none;">
+                        <label>Preview:</label>
+                        <br>
+                        <img id="previewImg" src="" alt="Preview" class="img-thumbnail" style="max-width: 200px;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Upload Bukti
                     </button>
                 </div>
-                <form id="uploadForm" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    @method('PATCH')
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="buktiFile">Pilih File Bukti</label>
-                            <input type="file" class="form-control-file" id="buktiFile" name="image" required accept="image/*">
-                            <small class="form-text text-muted">
-                                Format yang diizinkan: JPG, JPEG, PNG. Maksimal 2MB.
-                            </small>
-                        </div>
-                        <div class="form-group">
-                            <label>Tanggal Izin:</label>
-                            <span id="tanggalIzin" class="font-weight-bold text-primary"></span>
-                        </div>
-                        <div id="imagePreview" class="mt-3" style="display: none;">
-                            <label>Preview:</label>
-                            <br>
-                            <img id="previewImg" src="" alt="Preview" class="img-thumbnail" style="max-width: 200px;">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-upload"></i> Upload Bukti
-                        </button>
-                    </div>
-                </form>
-            </div>
+            </form>
         </div>
     </div>
+</div>
 
     <!-- Modal View Image -->
     <div class="modal fade" id="viewImageModal" tabindex="-1" role="dialog" aria-labelledby="viewImageModalLabel" aria-hidden="true">
@@ -164,10 +164,11 @@
 
     // Fungsi untuk menampilkan modal upload
     function showUploadModal(izinId, tanggalMulai) {
-        // Perbaikan: Gunakan route helper atau URL yang benar
-        const uploadUrl = `/permintaan-izin/${izinId}/upload-bukti`;
+        // Gunakan route helper Laravel yang benar untuk POST
+        const uploadUrl = "{{ route('permintaan-izin.upload-bukti', ':id') }}".replace(':id', izinId);
         
-        console.log('Setting form action to:', uploadUrl); // Debug
+        console.log('Setting form action to:', uploadUrl);
+        console.log('Izin ID:', izinId);
         
         document.getElementById('uploadForm').action = uploadUrl;
         document.getElementById('tanggalIzin').textContent = tanggalMulai;
@@ -187,6 +188,11 @@
     document.getElementById('uploadForm').addEventListener('submit', function(e) {
         const fileInput = document.getElementById('buktiFile');
         const file = fileInput.files[0];
+        
+        console.log('Form submitted');
+        console.log('Action:', this.action);
+        console.log('Method:', this.method);
+        console.log('Has file:', file ? true : false);
         
         if (!file) {
             e.preventDefault();
@@ -215,11 +221,18 @@
         submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
         submitButton.disabled = true;
 
-        // Reset button jika ada error
+        // Debug FormData
+        const formData = new FormData(this);
+        console.log('FormData entries:');
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+
+        // Reset button jika ada error (backup)
         setTimeout(() => {
             submitButton.innerHTML = originalText;
             submitButton.disabled = false;
-        }, 10000); // Reset after 10 seconds if no response
+        }, 10000);
     });
 
     // Fungsi konfirmasi delete
@@ -268,13 +281,6 @@
             }
         });
     }
-
-    // Debug: Log form data saat submit
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-        console.log('Form submitted with action:', this.action);
-        console.log('Form method:', this.method);
-        console.log('File selected:', document.getElementById('buktiFile').files[0]);
-    });
 </script>
 @endsection
 

@@ -34,8 +34,8 @@ Route::middleware(['auth', EnsureRoleIsUser::class])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 // Route baru untuk upload bukti
-Route::patch('/permintaan-izin/{permintaanIzin}/upload-bukti', [PermintaanIzinController::class, 'uploadBukti'])
-    ->name('permintaan-izin.upload-bukti');
+Route::post('permintaan-izin/{permintaanIzin}/upload-bukti', [PermintaanIzinController::class, 'uploadBukti'])
+        ->name('permintaan-izin.upload-bukti');
 
 Route::delete('/permintaan-izin/{permintaanIzin}/delete-bukti', [PermintaanIzinController::class, 'deleteBukti'])
     ->name('permintaan-izin.delete-bukti');
