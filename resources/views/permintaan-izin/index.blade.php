@@ -94,11 +94,11 @@
             </div>
             <form id="uploadForm" method="POST" enctype="multipart/form-data">
                 @csrf
-                <!-- Hapus @method('PATCH') karena kita menggunakan POST -->
+                @method('PUT')
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="buktiFile">Pilih File Bukti</label>
-                        <input type="file" class="form-control-file" id="buktiFile" name="image" required accept="image/*">
+                        <input type="file" class="form-control-file" id="buktiFile" name="image" required accept="image/jpeg,image/png,image/jpg">
                         <small class="form-text text-muted">
                             Format yang diizinkan: JPG, JPEG, PNG. Maksimal 2MB.
                         </small>
@@ -110,12 +110,12 @@
                     <div id="imagePreview" class="mt-3" style="display: none;">
                         <label>Preview:</label>
                         <br>
-                        <img id="previewImg" src="" alt="Preview" class="img-thumbnail" style="max-width: 200px;">
+                        <img id="previewImg" src="" alt="Preview" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="submitButton">
                         <i class="fas fa-upload"></i> Upload Bukti
                     </button>
                 </div>
@@ -147,10 +147,30 @@
 
 @section('scripts')
 <script>
+    // Global variables
+    let currentUploadId = null;
+    
     // Preview image saat file dipilih
     document.getElementById('buktiFile').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
+            // Validasi ukuran file
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Ukuran file maksimal 2MB!');
+                this.value = '';
+                document.getElementById('imagePreview').style.display = 'none';
+                return;
+            }
+            
+            // Validasi tipe file
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Format file harus JPG, JPEG, atau PNG!');
+                this.value = '';
+                document.getElementById('imagePreview').style.display = 'none';
+                return;
+            }
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('previewImg').src = e.target.result;
@@ -164,122 +184,127 @@
 
     // Fungsi untuk menampilkan modal upload
     function showUploadModal(izinId, tanggalMulai) {
-        // Gunakan route helper Laravel yang benar untuk POST
+        console.log('Opening upload modal for ID:', izinId);
+        
+        // Store current upload ID
+        currentUploadId = izinId;
+        
+        // Set form action URL
         const uploadUrl = "{{ route('permintaan-izin.upload-bukti', ':id') }}".replace(':id', izinId);
+        console.log('Upload URL:', uploadUrl);
         
-        console.log('Setting form action to:', uploadUrl);
-        console.log('Izin ID:', izinId);
+        // Configure form
+        const form = document.getElementById('uploadForm');
+        form.action = uploadUrl;
+        form.reset();
         
-        document.getElementById('uploadForm').action = uploadUrl;
+        // Set tanggal izin
         document.getElementById('tanggalIzin').textContent = tanggalMulai;
+        
+        // Hide preview
         document.getElementById('imagePreview').style.display = 'none';
-        document.getElementById('buktiFile').value = '';
+        
+        // Reset submit button
+        const submitButton = document.getElementById('submitButton');
+        submitButton.innerHTML = '<i class="fas fa-upload"></i> Upload Bukti';
+        submitButton.disabled = false;
+        
+        // Show modal
         $('#uploadModal').modal('show');
     }
 
-    // Fungsi untuk melihat gambar
+    // Handle form submission
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const fileInput = document.getElementById('buktiFile');
+        const submitButton = document.getElementById('submitButton');
+        
+        console.log('Form submission started');
+        console.log('Action URL:', this.action);
+        console.log('Method:', this.method);
+        console.log('Has file:', fileInput.files.length > 0);
+        
+        // Validate file
+        if (!fileInput.files.length) {
+            alert('Pilih file terlebih dahulu!');
+            return;
+        }
+        
+        const file = fileInput.files[0];
+        
+        // Final validation
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file maksimal 2MB!');
+            return;
+        }
+        
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Format file harus JPG, JPEG, atau PNG!');
+            return;
+        }
+        
+        // Show loading state
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        submitButton.disabled = true;
+        
+        // Create FormData
+        const formData = new FormData(this);
+        
+        // Debug FormData
+        console.log('FormData contents:');
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+        
+        // Submit form using fetch
+        fetch(this.action, {
+            method: 'POST', // Laravel akan menghandle PUT via @method('PUT')
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.status);
+            }
+            
+            return response.text(); // Laravel returns HTML redirect
+        })
+        .then(data => {
+            console.log('Upload successful');
+            // Close modal and reload page
+            $('#uploadModal').modal('hide');
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            alert('Terjadi kesalahan saat upload: ' + error.message);
+        })
+        .finally(() => {
+            // Reset button state
+            submitButton.innerHTML = '<i class="fas fa-upload"></i> Upload Bukti';
+            submitButton.disabled = false;
+        });
+    });
+
+    // Reset modal when hidden
+    $('#uploadModal').on('hidden.bs.modal', function() {
+        document.getElementById('uploadForm').reset();
+        document.getElementById('imagePreview').style.display = 'none';
+        currentUploadId = null;
+    });
+    
+    // Fungsi untuk melihat gambar (existing function)
     function viewImage(imageSrc, jenisIzin) {
         document.getElementById('viewImg').src = imageSrc;
         document.getElementById('viewImageModalLabel').textContent = `Bukti ${jenisIzin}`;
         $('#viewImageModal').modal('show');
-    }
-
-    // Handle form submission dengan validasi
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-        const fileInput = document.getElementById('buktiFile');
-        const file = fileInput.files[0];
-        
-        console.log('Form submitted');
-        console.log('Action:', this.action);
-        console.log('Method:', this.method);
-        console.log('Has file:', file ? true : false);
-        
-        if (!file) {
-            e.preventDefault();
-            alert('Pilih file terlebih dahulu!');
-            return;
-        }
-
-        // Validasi ukuran file (2MB = 2 * 1024 * 1024 bytes)
-        if (file.size > 2 * 1024 * 1024) {
-            e.preventDefault();
-            alert('Ukuran file maksimal 2MB!');
-            return;
-        }
-
-        // Validasi tipe file
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-        if (!allowedTypes.includes(file.type)) {
-            e.preventDefault();
-            alert('Format file harus JPG, JPEG, atau PNG!');
-            return;
-        }
-
-        // Tambahkan loading state
-        const submitButton = this.querySelector('button[type="submit"]');
-        const originalText = submitButton.innerHTML;
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-        submitButton.disabled = true;
-
-        // Debug FormData
-        const formData = new FormData(this);
-        console.log('FormData entries:');
-        for (let [key, value] of formData.entries()) {
-            console.log(key, value);
-        }
-
-        // Reset button jika ada error (backup)
-        setTimeout(() => {
-            submitButton.innerHTML = originalText;
-            submitButton.disabled = false;
-        }, 10000);
-    });
-
-    // Fungsi konfirmasi delete
-    function confirmDelete(deleteUrl, itemName = 'data ini') {
-        Swal.fire({
-            title: 'Hapus Data Ini',
-            text: 'Apakah Anda yakin ingin melakukan ini?',
-            icon: 'warning',
-            iconColor: '#dc3545',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Konfirmasi',
-            cancelButtonText: 'Batal',
-            reverseButtons: true,
-            customClass: {
-                popup: 'swal2-popup-custom',
-                icon: 'swal2-icon-custom',
-                title: 'swal2-title-custom',
-                htmlContainer: 'swal2-text-custom',
-                confirmButton: 'swal2-confirm-custom',
-                cancelButton: 'swal2-cancel-custom'
-            },
-            buttonsStyling: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = deleteUrl;
-                form.style.display = 'none';
-
-                const csrfToken = document.createElement('input');
-                csrfToken.type = 'hidden';
-                csrfToken.name = '_token';
-                csrfToken.value = '{{ csrf_token() }}';
-
-                const methodField = document.createElement('input');
-                methodField.type = 'hidden';
-                methodField.name = '_method';
-                methodField.value = 'DELETE';
-
-                form.appendChild(csrfToken);
-                form.appendChild(methodField);
-                document.body.appendChild(form);
-                form.submit();
-            }
-        });
     }
 </script>
 @endsection
