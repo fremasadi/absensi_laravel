@@ -192,23 +192,23 @@ class BarcodeController extends Controller
             $shiftEnd = $shiftEnd->addDay();
         }
 
-       // Waktu mulai dan akhir untuk barcode absensi keluar
-        $exitWindowStart = $shiftEnd->copy(); // Saat shift selesai
-        $exitWindowEnd = $shiftEnd->copy()->addHour(); // 1 jam setelah shift selesai
+        // Hitung waktu minimum untuk absen keluar (1 jam setelah shift berakhir)
+       // Barcode hanya tersedia selama 1 jam setelah shift selesai
+$exitWindowStart = $shiftEnd->copy(); // langsung setelah shift selesai
+$exitWindowEnd = $shiftEnd->copy()->addHour(); // sampai 1 jam setelah selesai
 
-        // Validasi apakah sekarang dalam rentang yang diizinkan
-        if ($now->lt($exitWindowStart) || $now->gt($exitWindowEnd)) {
-            return view('barcode-keluar', [
-                'barcode' => null,
-                'shift' => $shift,
-                'shiftName' => $shiftName,
-                'shiftStart' => $shiftStart,
-                'shiftEnd' => $shiftEnd,
-                'minimumExitTime' => $exitWindowStart,
-                'maximumExitTime' => $exitWindowEnd,
-                'message' => "Barcode absensi keluar hanya tersedia dari pukul {$exitWindowStart->format('H:i')} sampai {$exitWindowEnd->format('H:i')} (1 jam setelah shift {$shiftName} berakhir). Sekarang: {$now->format('H:i')}"
-            ]);
-        }
+if (!$now->between($exitWindowStart, $exitWindowEnd)) {
+    return view('barcode-keluar', [
+        'barcode' => null,
+        'shift' => $shift,
+        'shiftName' => $shiftName,
+        'shiftStart' => $shiftStart,
+        'shiftEnd' => $shiftEnd,
+        'exitWindowStart' => $exitWindowStart,
+        'exitWindowEnd' => $exitWindowEnd,
+        'message' => "Barcode absensi keluar hanya tersedia dari pukul {$exitWindowStart->format('H:i')} sampai {$exitWindowEnd->format('H:i')}. Waktu sekarang: {$now->format('H:i')}"
+    ]);
+}
 
 
         // Generate barcode untuk absen keluar
