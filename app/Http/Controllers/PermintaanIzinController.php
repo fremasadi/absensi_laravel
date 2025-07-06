@@ -118,7 +118,7 @@ class PermintaanIzinController extends Controller
             ->with('success', 'Status permintaan izin berhasil diperbarui.');
     }
 
-    /**
+   /**
  * Upload bukti izin setelah tanggal mulai izin
  */
 public function uploadBukti(Request $request, PermintaanIzin $permintaanIzin)
@@ -192,27 +192,37 @@ public function uploadBukti(Request $request, PermintaanIzin $permintaanIzin)
             'file_exists' => Storage::disk('public')->exists($imagePath)
         ]);
 
-        // Update database
-        $updateData = [
-            'image' => $imagePath,
-            'bukti_uploaded_at' => now()
-        ];
-        
-        Log::info('Attempting to update database', [
-            'update_data' => $updateData,
-            'permission_id' => $permintaanIzin->id
+        // Debug: Cek data sebelum update
+        Log::info('Data sebelum update', [
+            'current_image' => $permintaanIzin->image,
+            'current_bukti_uploaded_at' => $permintaanIzin->bukti_uploaded_at,
+            'fillable_fields' => $permintaanIzin->getFillable()
         ]);
 
-        $updateResult = $permintaanIzin->update($updateData);
+        // Update database dengan cara yang lebih eksplisit
+        $permintaanIzin->image = $imagePath;
+        $permintaanIzin->bukti_uploaded_at = now();
+        $updateResult = $permintaanIzin->save();
 
         // Debug: Log update result
         Log::info('Database update result', [
             'success' => $updateResult,
-            'updated_record' => $permintaanIzin->fresh()->only(['id', 'image', 'bukti_uploaded_at'])
+            'updated_record' => $permintaanIzin->fresh()->only(['id', 'image', 'bukti_uploaded_at']),
+            'sql_executed' => DB::getQueryLog()
         ]);
 
         if ($updateResult) {
-            return redirect()->back()->with('success', 'Bukti izin berhasil diupload.');
+            // Pastikan data benar-benar tersimpan
+            $updatedRecord = $permintaanIzin->fresh();
+            if ($updatedRecord->image === $imagePath) {
+                return redirect()->back()->with('success', 'Bukti izin berhasil diupload.');
+            } else {
+                Log::error('Data tidak tersimpan dengan benar', [
+                    'expected' => $imagePath,
+                    'actual' => $updatedRecord->image
+                ]);
+                return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
+            }
         } else {
             return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
         }
