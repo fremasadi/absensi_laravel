@@ -37,7 +37,11 @@ Route::middleware(['auth', EnsureRoleIsUser::class])->group(function () {
     Route::post('/permintaan-izin/{permintaanIzin}/upload-bukti', [PermintaanIzinController::class, 'uploadBukti'])
     ->name('permintaan-izin.upload-bukti');
 
-Route::delete('/permintaan-izin/{permintaanIzin}/delete-bukti', [PermintaanIzinController::class, 'deleteBukti'])
+    // Option 2: Menggunakan PUT untuk update
+    Route::put('/permintaan-izin/{permintaanIzin}/upload-bukti', [PermintaanIzinController::class, 'uploadBukti'])
+    ->name('permintaan-izin.upload-bukti');
+
+    Route::delete('/permintaan-izin/{permintaanIzin}/delete-bukti', [PermintaanIzinController::class, 'deleteBukti'])
     ->name('permintaan-izin.delete-bukti');
 
 });

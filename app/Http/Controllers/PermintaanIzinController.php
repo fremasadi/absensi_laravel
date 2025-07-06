@@ -123,6 +123,9 @@ class PermintaanIzinController extends Controller
  */
 public function uploadBukti(Request $request, PermintaanIzin $permintaanIzin)
 {
+    // Aktifkan query logging untuk debugging
+    \DB::enableQueryLog();
+    
     // Debug: Log request details
     Log::info('Upload bukti request via POST', [
         'user_id' => Auth::id(),
@@ -199,39 +202,67 @@ public function uploadBukti(Request $request, PermintaanIzin $permintaanIzin)
             'fillable_fields' => $permintaanIzin->getFillable()
         ]);
 
-        // Update database dengan cara yang lebih eksplisit
-        $permintaanIzin->image = $imagePath;
-        $permintaanIzin->bukti_uploaded_at = now();
-        $updateResult = $permintaanIzin->save();
+        // METHOD 1: Menggunakan update() - Lebih eksplisit
+        $updateData = [
+            'image' => $imagePath,
+            'bukti_uploaded_at' => now()
+        ];
+        
+        $updateResult = $permintaanIzin->update($updateData);
+        
+        // METHOD 2: Alternatif menggunakan DB::table() jika method 1 gagal
+        // $updateResult = DB::table('permintaan_izins')
+        //     ->where('id', $permintaanIzin->id)
+        //     ->update($updateData);
 
         // Debug: Log update result
         Log::info('Database update result', [
             'success' => $updateResult,
-            'updated_record' => $permintaanIzin->fresh()->only(['id', 'image', 'bukti_uploaded_at']),
-            'sql_executed' => DB::getQueryLog()
+            'updated_data' => $updateData,
+            'sql_queries' => DB::getQueryLog()
         ]);
 
-        if ($updateResult) {
-            // Pastikan data benar-benar tersimpan
-            $updatedRecord = $permintaanIzin->fresh();
-            if ($updatedRecord->image === $imagePath) {
+        // Refresh model untuk mendapatkan data terbaru
+        $permintaanIzin->refresh();
+        
+        // Verifikasi data tersimpan
+        Log::info('Data setelah update', [
+            'updated_image' => $permintaanIzin->image,
+            'updated_bukti_uploaded_at' => $permintaanIzin->bukti_uploaded_at,
+            'expected_image' => $imagePath
+        ]);
+
+        if ($updateResult && $permintaanIzin->image === $imagePath) {
+            return redirect()->back()->with('success', 'Bukti izin berhasil diupload.');
+        } else {
+            // Jika update gagal, coba method alternatif
+            Log::warning('Update gagal, mencoba method alternatif');
+            
+            // Method alternatif menggunakan raw query
+            $rawUpdateResult = DB::table('permintaan_izins')
+                ->where('id', $permintaanIzin->id)
+                ->update([
+                    'image' => $imagePath,
+                    'bukti_uploaded_at' => now(),
+                    'updated_at' => now()
+                ]);
+            
+            Log::info('Raw update result', ['result' => $rawUpdateResult]);
+            
+            if ($rawUpdateResult) {
                 return redirect()->back()->with('success', 'Bukti izin berhasil diupload.');
             } else {
-                Log::error('Data tidak tersimpan dengan benar', [
-                    'expected' => $imagePath,
-                    'actual' => $updatedRecord->image
-                ]);
                 return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
             }
-        } else {
-            return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
         }
 
     } catch (\Exception $e) {
         // Log error
         Log::error('Upload bukti error', [
             'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
+            'trace' => $e->getTraceAsString(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
         ]);
 
         return redirect()->back()->with('error', 'Terjadi kesalahan saat upload: ' . $e->getMessage());
