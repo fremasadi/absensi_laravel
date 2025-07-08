@@ -10,10 +10,8 @@ class PermintaanIzin extends Model
 {
     use HasFactory;
 
-    // Tentukan tabel yang digunakan
     protected $table = 'permintaan_izins';
 
-    // Tentukan kolom yang dapat diisi (mass assignment)
     protected $fillable = [
         'user_id',
         'tanggal_mulai',
@@ -22,8 +20,14 @@ class PermintaanIzin extends Model
         'alasan',
         'image',
         'status',
-        'bukti_uploaded_at', // Tambahkan ini ke fillable
+        'bukti_uploaded_at',
+    ];
 
+    protected $casts = [
+        'tanggal_mulai' => 'date',
+        'tanggal_selesai' => 'date',
+        'bukti_uploaded_at' => 'datetime',
+        'status' => 'boolean',
     ];
 
     // Relasi dengan model User
@@ -32,7 +36,18 @@ class PermintaanIzin extends Model
         return $this->belongsTo(User::class);
     }
 
-    protected $casts = [
-        'bukti_uploaded_at' => 'datetime',
-    ];
+    // Accessor untuk mendapatkan URL gambar
+    public function getImageUrlAttribute()
+    {
+        return $this->image ? Storage::url($this->image) : null;
+    }
+
+    // Mutator untuk handle upload
+    public function setImageAttribute($value)
+    {
+        if ($value) {
+            $this->attributes['image'] = $value;
+            $this->attributes['bukti_uploaded_at'] = now();
+        }
+    }
 }

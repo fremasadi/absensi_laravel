@@ -32,34 +32,45 @@ class PermintaanIzinResource extends Resource
     }
 
     public static function form(Form $form): Form
-    {
-        return $form
-            ->schema([
-                Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name')
-                    ->required(),
-                Forms\Components\DatePicker::make('tanggal_mulai')
-                    ->required(),
-                Forms\Components\DatePicker::make('tanggal_selesai')
-                    ->required(),
-                Forms\Components\Select::make('jenis_izin')
-                    ->label('Jenis Izin')
-                    ->options([
-                        'Sakit' => 'Sakit',
-                        'Cuti' => 'Cuti',
-                        'Keperluan Keluarga' => 'Keperluan Keluarga',
-                        'Lainnya' => 'Lainnya',
-                    ])
-                    ->required(),
-                Forms\Components\Textarea::make('alasan')
-                    ->required()
-                    ->columnSpanFull(),
-                Forms\Components\FileUpload::make('image')
-                    ->image(),
-                Forms\Components\Toggle::make('status')
-                    ->required(),
-            ]);
-    }
+{
+    return $form
+        ->schema([
+            Forms\Components\Select::make('user_id')
+                ->relationship('user', 'name')
+                ->required(),
+            Forms\Components\DatePicker::make('tanggal_mulai')
+                ->required(),
+            Forms\Components\DatePicker::make('tanggal_selesai')
+                ->required(),
+            Forms\Components\Select::make('jenis_izin')
+                ->label('Jenis Izin')
+                ->options([
+                    'Sakit' => 'Sakit',
+                    'Cuti' => 'Cuti',
+                    'Keperluan Keluarga' => 'Keperluan Keluarga',
+                    'Lainnya' => 'Lainnya',
+                ])
+                ->required(),
+            Forms\Components\Textarea::make('alasan')
+                ->required()
+                ->columnSpanFull(),
+            Forms\Components\FileUpload::make('image')
+                ->label('Bukti Pendukung')
+                ->image()
+                ->directory('permintaan-izin') // Tentukan folder penyimpanan
+                ->visibility('private') // atau 'public'
+                ->maxSize(2048) // Maksimal 2MB
+                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                ->imageEditor() // Tambahkan image editor
+                ->imageResizeMode('contain')
+                ->imageCropAspectRatio(null)
+                ->imageResizeTargetWidth('1920')
+                ->imageResizeTargetHeight('1080')
+                ->nullable(), // Pastikan nullable jika tidak required
+            Forms\Components\Toggle::make('status')
+                ->required(),
+        ]);
+}
 
     public static function table(Table $table): Table
     {
