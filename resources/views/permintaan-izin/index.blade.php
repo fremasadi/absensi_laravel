@@ -114,17 +114,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    @php
-                        $tanggalMulai = \Carbon\Carbon::parse($izin->tanggal_mulai);
-                        $today = \Carbon\Carbon::today();
-                        $canUpload = $today->gte($tanggalMulai) && $today->lte($tanggalMulai->copy()->addDays(3));
-                    @endphp
-
-                    @if($canUpload && auth()->user()->id == $izin->user_id)
-                        <button type="button" class="btn btn-warning btn-sm" onclick="showUploadModal({{ $izin->id }}, '{{ $tanggalMulai->format('d/m/Y') }}')">
-                            <i class="fas fa-upload"></i> Upload Bukti
-                        </button>
-                    @endif
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="submitButton">
+                        <i class="fas fa-upload"></i> Upload Bukti
+                    </button>
                 </div>
             </form>
         </div>
