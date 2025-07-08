@@ -108,83 +108,108 @@ class PermintaanIzinController extends Controller
             ->with('success', 'Permintaan izin berhasil dihapus.');
     }
 
-    public function updateStatus(PermintaanIzin $permintaanIzin)
-    {
-        $permintaanIzin->update([
-            'status' => !$permintaanIzin->status
-        ]);
-
-        return redirect()->back()
-            ->with('success', 'Status permintaan izin berhasil diperbarui.');
-    }
-
     /**
      * Upload bukti untuk permintaan izin
      * Method ini akan dipanggil ketika user mengupload bukti izin
-     */
-    public function uploadBukti(Request $request, PermintaanIzin $permintaanIzin)
-    {
-        // Log untuk debugging
-        Log::info('Upload bukti called for ID: ' . $permintaanIzin->id);
-        Log::info('Request data: ', $request->all());
-        Log::info('Has file: ' . ($request->hasFile('image') ? 'Yes' : 'No'));
+
+ * Upload bukti untuk permintaan izin - IMPROVED VERSION
+ */
+public function uploadBukti(Request $request, PermintaanIzin $permintaanIzin)
+{
+    // Log untuk debugging
+    Log::info('Upload bukti called for ID: ' . $permintaanIzin->id);
+    Log::info('Request data: ', $request->all());
+    Log::info('Has file: ' . ($request->hasFile('image') ? 'Yes' : 'No'));
+    Log::info('Request method: ' . $request->method());
+    Log::info('Content type: ' . $request->header('Content-Type'));
+    
+    // Validasi bahwa user hanya bisa upload bukti untuk permintaan izin miliknya sendiri
+    if ($permintaanIzin->user_id !== Auth::id()) {
+        if ($request->expectsJson()) {
+            return response()->json(['error' => 'Anda tidak memiliki akses untuk mengupload bukti ini.'], 403);
+        }
+        return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk mengupload bukti ini.');
+    }
+
+    // Validasi tanggal - hanya bisa upload pada hari mulai izin sampai 3 hari setelahnya
+    $tanggalMulai = Carbon::parse($permintaanIzin->tanggal_mulai);
+    $today = Carbon::today();
+    $maxUploadDate = $tanggalMulai->copy()->addDays(3);
+
+    if ($today->lt($tanggalMulai)) {
+        if ($request->expectsJson()) {
+            return response()->json(['error' => 'Belum saatnya untuk mengupload bukti izin.'], 400);
+        }
+        return redirect()->back()->with('error', 'Belum saatnya untuk mengupload bukti izin.');
+    }
+
+    if ($today->gt($maxUploadDate)) {
+        if ($request->expectsJson()) {
+            return response()->json(['error' => 'Waktu upload bukti telah habis (maksimal 3 hari setelah tanggal mulai izin).'], 400);
+        }
+        return redirect()->back()->with('error', 'Waktu upload bukti telah habis (maksimal 3 hari setelah tanggal mulai izin).');
+    }
+
+    // Validasi file
+    $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+        'image' => 'required|image|mimes:jpeg,png,jpg|max:2048'
+    ], [
+        'image.required' => 'File bukti harus diupload.',
+        'image.image' => 'File harus berupa gambar.',
+        'image.mimes' => 'Format file harus JPG, JPEG, atau PNG.',
+        'image.max' => 'Ukuran file maksimal 2MB.'
+    ]);
+
+    if ($validator->fails()) {
+        Log::error('Validation failed: ', $validator->errors()->toArray());
+        if ($request->expectsJson()) {
+            return response()->json(['error' => $validator->errors()->first()], 422);
+        }
+        return redirect()->back()->withErrors($validator)->withInput();
+    }
+
+    try {
+        // Hapus gambar lama jika ada
+        if ($permintaanIzin->image) {
+            Storage::disk('public')->delete($permintaanIzin->image);
+            Log::info('Old image deleted: ' . $permintaanIzin->image);
+        }
+
+        // Upload gambar baru
+        $image = $request->file('image');
+        $imageName = 'bukti_izin_' . $permintaanIzin->id . '_' . time() . '.' . $image->getClientOriginalExtension();
         
-        // Validasi bahwa user hanya bisa upload bukti untuk permintaan izin miliknya sendiri
-        if ($permintaanIzin->user_id !== Auth::id()) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk mengupload bukti ini.');
-        }
-
-        // Validasi tanggal - hanya bisa upload pada hari mulai izin sampai 3 hari setelahnya
-        $tanggalMulai = Carbon::parse($permintaanIzin->tanggal_mulai);
-        $today = Carbon::today();
-        $maxUploadDate = $tanggalMulai->copy()->addDays(3);
-
-        if ($today->lt($tanggalMulai)) {
-            return redirect()->back()->with('error', 'Belum saatnya untuk mengupload bukti izin.');
-        }
-
-        if ($today->gt($maxUploadDate)) {
-            return redirect()->back()->with('error', 'Waktu upload bukti telah habis (maksimal 3 hari setelah tanggal mulai izin).');
-        }
-
-        // Validasi file
-        $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg|max:2048'
-        ], [
-            'image.required' => 'File bukti harus diupload.',
-            'image.image' => 'File harus berupa gambar.',
-            'image.mimes' => 'Format file harus JPG, JPEG, atau PNG.',
-            'image.max' => 'Ukuran file maksimal 2MB.'
+        // Simpan ke storage/app/public/izin-bukti
+        $path = $image->storeAs('izin-bukti', $imageName, 'public');
+        
+        // Update database
+        $permintaanIzin->update([
+            'image' => $path,
+            'bukti_uploaded_at' => Carbon::now()
         ]);
 
-        try {
-            // Hapus gambar lama jika ada
-            if ($permintaanIzin->image) {
-                Storage::disk('public')->delete($permintaanIzin->image);
-                Log::info('Old image deleted: ' . $permintaanIzin->image);
-            }
+        Log::info('Image uploaded successfully: ' . $path);
 
-            // Upload gambar baru
-            $image = $request->file('image');
-            $imageName = 'bukti_izin_' . $permintaanIzin->id . '_' . time() . '.' . $image->getClientOriginalExtension();
-            
-            // Simpan ke storage/app/public/izin-bukti
-            $path = $image->storeAs('izin-bukti', $imageName, 'public');
-            
-            // Update database
-            $permintaanIzin->update([
-                'image' => $path,
-                'bukti_uploaded_at' => Carbon::now()
+        // Return appropriate response
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bukti izin berhasil diupload.',
+                'image_path' => $path
             ]);
-
-            Log::info('Image uploaded successfully: ' . $path);
-
-            return redirect()->route('permintaan-izin.index')
-                ->with('success', 'Bukti izin berhasil diupload.');
-
-        } catch (\Exception $e) {
-            Log::error('Upload bukti error: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat mengupload bukti: ' . $e->getMessage());
         }
+
+        return redirect()->route('permintaan-izin.index')
+            ->with('success', 'Bukti izin berhasil diupload.');
+
+    } catch (\Exception $e) {
+        Log::error('Upload bukti error: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+        
+        if ($request->expectsJson()) {
+            return response()->json(['error' => 'Terjadi kesalahan saat mengupload bukti: ' . $e->getMessage()], 500);
+        }
+        return redirect()->back()->with('error', 'Terjadi kesalahan saat mengupload bukti: ' . $e->getMessage());
     }
+}
 }

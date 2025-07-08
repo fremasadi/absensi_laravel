@@ -213,85 +213,111 @@
         $('#uploadModal').modal('show');
     }
 
-    // Handle form submission
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+    // Handle form submission - FIXED VERSION
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('buktiFile');
+    const submitButton = document.getElementById('submitButton');
+    
+    console.log('Form submission started');
+    console.log('Action URL:', this.action);
+    console.log('Method:', this.method);
+    console.log('Has file:', fileInput.files.length > 0);
+    
+    // Validate file
+    if (!fileInput.files.length) {
+        alert('Pilih file terlebih dahulu!');
+        return;
+    }
+    
+    const file = fileInput.files[0];
+    
+    // Final validation
+    if (file.size > 2 * 1024 * 1024) {
+        alert('Ukuran file maksimal 2MB!');
+        return;
+    }
+    
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+        alert('Format file harus JPG, JPEG, atau PNG!');
+        return;
+    }
+    
+    // Show loading state
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    submitButton.disabled = true;
+    
+    // Create FormData
+    const formData = new FormData(this);
+    
+    // Debug FormData
+    console.log('FormData contents:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
+    
+    // Submit form using fetch - FIXED VERSION
+    fetch(this.action, {
+        method: 'POST', // Laravel akan menghandle PUT via @method('PUT')
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json', // Tambahkan ini untuk mendapat response JSON
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response OK:', response.ok);
         
-        const fileInput = document.getElementById('buktiFile');
-        const submitButton = document.getElementById('submitButton');
-        
-        console.log('Form submission started');
-        console.log('Action URL:', this.action);
-        console.log('Method:', this.method);
-        console.log('Has file:', fileInput.files.length > 0);
-        
-        // Validate file
-        if (!fileInput.files.length) {
-            alert('Pilih file terlebih dahulu!');
+        // Handle different response types
+        if (response.redirected) {
+            console.log('Response redirected to:', response.url);
+            window.location.href = response.url;
             return;
         }
         
-        const file = fileInput.files[0];
+        // Try to parse as JSON first
+        return response.json().catch(() => {
+            // If JSON parsing fails, try text
+            return response.text().then(text => {
+                console.log('Response text:', text);
+                if (response.ok) {
+                    // Success but not JSON - probably redirect
+                    location.reload();
+                } else {
+                    throw new Error('Server error: ' + response.status);
+                }
+            });
+        });
+    })
+    .then(data => {
+        console.log('Upload response:', data);
         
-        // Final validation
-        if (file.size > 2 * 1024 * 1024) {
-            alert('Ukuran file maksimal 2MB!');
-            return;
-        }
-        
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-        if (!allowedTypes.includes(file.type)) {
-            alert('Format file harus JPG, JPEG, atau PNG!');
-            return;
-        }
-        
-        // Show loading state
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-        submitButton.disabled = true;
-        
-        // Create FormData
-        const formData = new FormData(this);
-        
-        // Debug FormData
-        console.log('FormData contents:');
-        for (let [key, value] of formData.entries()) {
-            console.log(key, value);
-        }
-        
-        // Submit form using fetch
-        fetch(this.action, {
-            method: 'POST', // Laravel akan menghandle PUT via @method('PUT')
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => {
-            console.log('Response status:', response.status);
-            console.log('Response headers:', response.headers);
-            
-            if (!response.ok) {
-                throw new Error('Network response was not ok: ' + response.status);
-            }
-            
-            return response.text(); // Laravel returns HTML redirect
-        })
-        .then(data => {
+        if (data && data.success) {
             console.log('Upload successful');
-            // Close modal and reload page
             $('#uploadModal').modal('hide');
             location.reload();
-        })
-        .catch(error => {
-            console.error('Upload error:', error);
-            alert('Terjadi kesalahan saat upload: ' + error.message);
-        })
-        .finally(() => {
-            // Reset button state
-            submitButton.innerHTML = '<i class="fas fa-upload"></i> Upload Bukti';
-            submitButton.disabled = false;
-        });
+        } else if (data && data.error) {
+            throw new Error(data.error);
+        } else {
+            // If we get here, probably a redirect happened
+            console.log('Upload completed, reloading page');
+            $('#uploadModal').modal('hide');
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        alert('Terjadi kesalahan saat upload: ' + error.message);
+    })
+    .finally(() => {
+        // Reset button state
+        submitButton.innerHTML = '<i class="fas fa-upload"></i> Upload Bukti';
+        submitButton.disabled = false;
     });
+});
 
     // Reset modal when hidden
     $('#uploadModal').on('hidden.bs.modal', function() {
