@@ -57,20 +57,38 @@
                                         $tanggalMulai = \Carbon\Carbon::parse($izin->tanggal_mulai);
                                         $today = \Carbon\Carbon::today();
                                         $canUpload = $today->gte($tanggalMulai) && $today->lte($tanggalMulai->copy()->addDays(3)); // bisa upload sampai 3 hari setelah tanggal mulai
+                                        $isAdmin = auth()->user()->role === 'admin';
                                     @endphp
                                     
-                                    @if($canUpload && auth()->user()->id == $izin->user_id)
-                                        <button type="button" class="btn btn-warning btn-sm" onclick="showUploadModal({{ $izin->id }}, '{{ $tanggalMulai->format('d/m/Y') }}')">
+                                    @if(($canUpload && auth()->user()->id == $izin->user_id) || $isAdmin)
+                                        <button type="button" class="btn btn-warning btn-sm" onclick="showUploadModal({{ $izin->id }}, '{{ $tanggalMulai->format('d/m/Y') }}', '{{ $izin->user->name }}', {{ $isAdmin ? 'true' : 'false' }})">
                                             <i class="fas fa-upload"></i> Upload Bukti
+                                            @if($isAdmin)
+                                                <small class="d-block text-muted" style="font-size: 0.7em;">(Admin)</small>
+                                            @endif
                                         </button>
                                     @elseif($today->lt($tanggalMulai))
-                                        <span class="badge badge-secondary">
-                                            <i class="fas fa-clock"></i> Belum Waktunya
-                                        </span>
+                                        <div class="d-flex flex-column align-items-start">
+                                            <span class="badge badge-secondary mb-1">
+                                                <i class="fas fa-clock"></i> Belum Waktunya
+                                            </span>
+                                            @if($isAdmin)
+                                                <button type="button" class="btn btn-warning btn-sm" onclick="showUploadModal({{ $izin->id }}, '{{ $tanggalMulai->format('d/m/Y') }}', '{{ $izin->user->name }}', true)">
+                                                    <i class="fas fa-upload"></i> Upload (Admin)
+                                                </button>
+                                            @endif
+                                        </div>
                                     @else
-                                        <span class="badge badge-danger">
-                                            <i class="fas fa-times"></i> Tidak Ada Bukti
-                                        </span>
+                                        <div class="d-flex flex-column align-items-start">
+                                            <span class="badge badge-danger mb-1">
+                                                <i class="fas fa-times"></i> Tidak Ada Bukti
+                                            </span>
+                                            @if($isAdmin)
+                                                <button type="button" class="btn btn-warning btn-sm" onclick="showUploadModal({{ $izin->id }}, '{{ $tanggalMulai->format('d/m/Y') }}', '{{ $izin->user->name }}', true)">
+                                                    <i class="fas fa-upload"></i> Upload (Admin)
+                                                </button>
+                                            @endif
+                                        </div>
                                     @endif
                                 @endif
                             </td>
@@ -83,46 +101,51 @@
     </div>
 
     <!-- Modal Upload Bukti -->
-<div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="uploadModalLabel">Upload Bukti Izin</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <form id="uploadForm" method="POST" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="buktiFile">Pilih File Bukti</label>
-                        <input type="file" class="form-control-file" id="buktiFile" name="image" required accept="image/jpeg,image/png,image/jpg">
-                        <small class="form-text text-muted">
-                            Format yang diizinkan: JPG, JPEG, PNG. Maksimal 2MB.
-                        </small>
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal Izin:</label>
-                        <span id="tanggalIzin" class="font-weight-bold text-primary"></span>
-                    </div>
-                    <div id="imagePreview" class="mt-3" style="display: none;">
-                        <label>Preview:</label>
-                        <br>
-                        <img id="previewImg" src="" alt="Preview" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary" id="submitButton">
-                        <i class="fas fa-upload"></i> Upload Bukti
+    <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">Upload Bukti Izin</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-            </form>
+                <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-body">
+                        <div id="adminNotice" class="alert alert-info" style="display: none;">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Admin:</strong> Anda sedang mengupload bukti untuk <span id="userName"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="buktiFile">Pilih File Bukti</label>
+                            <input type="file" class="form-control-file" id="buktiFile" name="image" required accept="image/jpeg,image/png,image/jpg">
+                            <small class="form-text text-muted">
+                                Format yang diizinkan: JPG, JPEG, PNG. Maksimal 2MB.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label>Tanggal Izin:</label>
+                            <span id="tanggalIzin" class="font-weight-bold text-primary"></span>
+                        </div>
+                        <div id="imagePreview" class="mt-3" style="display: none;">
+                            <label>Preview:</label>
+                            <br>
+                            <img id="previewImg" src="" alt="Preview" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary" id="submitButton">
+                            <i class="fas fa-upload"></i> Upload Bukti
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
     <!-- Modal View Image -->
     <div class="modal fade" id="viewImageModal" tabindex="-1" role="dialog" aria-labelledby="viewImageModalLabel" aria-hidden="true">
@@ -183,150 +206,33 @@
     });
 
     // Fungsi untuk menampilkan modal upload
-    function showUploadModal(izinId, tanggalMulai) {
-        console.log('Opening upload modal for ID:', izinId);
+    function showUploadModal(id, tanggal, userName = null, isAdmin = false) {
+        currentUploadId = id;
+        document.getElementById('tanggalIzin').textContent = tanggal;
         
-        // Store current upload ID
-        currentUploadId = izinId;
+        // Set form action
+        document.getElementById('uploadForm').action = `/permintaan-izin/${id}/upload-bukti`;
         
-        // Set form action URL
-        const uploadUrl = "{{ route('permintaan-izin.upload-bukti', ':id') }}".replace(':id', izinId);
-        console.log('Upload URL:', uploadUrl);
+        // Show/hide admin notice
+        if (isAdmin && userName) {
+            document.getElementById('adminNotice').style.display = 'block';
+            document.getElementById('userName').textContent = userName;
+        } else {
+            document.getElementById('adminNotice').style.display = 'none';
+        }
         
-        // Configure form
-        const form = document.getElementById('uploadForm');
-        form.action = uploadUrl;
-        form.reset();
-        
-        // Set tanggal izin
-        document.getElementById('tanggalIzin').textContent = tanggalMulai;
-        
-        // Hide preview
-        document.getElementById('imagePreview').style.display = 'none';
-        
-        // Reset submit button
-        const submitButton = document.getElementById('submitButton');
-        submitButton.innerHTML = '<i class="fas fa-upload"></i> Upload Bukti';
-        submitButton.disabled = false;
-        
-        // Show modal
         $('#uploadModal').modal('show');
     }
-
-    // Handle form submission - FIXED VERSION
-document.getElementById('uploadForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const fileInput = document.getElementById('buktiFile');
-    const submitButton = document.getElementById('submitButton');
-    
-    console.log('Form submission started');
-    console.log('Action URL:', this.action);
-    console.log('Method:', this.method);
-    console.log('Has file:', fileInput.files.length > 0);
-    
-    // Validate file
-    if (!fileInput.files.length) {
-        alert('Pilih file terlebih dahulu!');
-        return;
-    }
-    
-    const file = fileInput.files[0];
-    
-    // Final validation
-    if (file.size > 2 * 1024 * 1024) {
-        alert('Ukuran file maksimal 2MB!');
-        return;
-    }
-    
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
-        alert('Format file harus JPG, JPEG, atau PNG!');
-        return;
-    }
-    
-    // Show loading state
-    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-    submitButton.disabled = true;
-    
-    // Create FormData
-    const formData = new FormData(this);
-    
-    // Debug FormData
-    console.log('FormData contents:');
-    for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-    }
-    
-    // Submit form using fetch - FIXED VERSION
-    fetch(this.action, {
-        method: 'POST', // Laravel akan menghandle PUT via @method('PUT')
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'Accept': 'application/json', // Tambahkan ini untuk mendapat response JSON
-        }
-    })
-    .then(response => {
-        console.log('Response status:', response.status);
-        console.log('Response OK:', response.ok);
-        
-        // Handle different response types
-        if (response.redirected) {
-            console.log('Response redirected to:', response.url);
-            window.location.href = response.url;
-            return;
-        }
-        
-        // Try to parse as JSON first
-        return response.json().catch(() => {
-            // If JSON parsing fails, try text
-            return response.text().then(text => {
-                console.log('Response text:', text);
-                if (response.ok) {
-                    // Success but not JSON - probably redirect
-                    location.reload();
-                } else {
-                    throw new Error('Server error: ' + response.status);
-                }
-            });
-        });
-    })
-    .then(data => {
-        console.log('Upload response:', data);
-        
-        if (data && data.success) {
-            console.log('Upload successful');
-            $('#uploadModal').modal('hide');
-            location.reload();
-        } else if (data && data.error) {
-            throw new Error(data.error);
-        } else {
-            // If we get here, probably a redirect happened
-            console.log('Upload completed, reloading page');
-            $('#uploadModal').modal('hide');
-            location.reload();
-        }
-    })
-    .catch(error => {
-        console.error('Upload error:', error);
-        alert('Terjadi kesalahan saat upload: ' + error.message);
-    })
-    .finally(() => {
-        // Reset button state
-        submitButton.innerHTML = '<i class="fas fa-upload"></i> Upload Bukti';
-        submitButton.disabled = false;
-    });
-});
 
     // Reset modal when hidden
     $('#uploadModal').on('hidden.bs.modal', function() {
         document.getElementById('uploadForm').reset();
         document.getElementById('imagePreview').style.display = 'none';
+        document.getElementById('adminNotice').style.display = 'none';
         currentUploadId = null;
     });
     
-    // Fungsi untuk melihat gambar (existing function)
+    // Fungsi untuk melihat gambar
     function viewImage(imageSrc, jenisIzin) {
         document.getElementById('viewImg').src = imageSrc;
         document.getElementById('viewImageModalLabel').textContent = `Bukti ${jenisIzin}`;
@@ -416,6 +322,19 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
     .badge {
         font-size: 0.75em;
         padding: 0.375rem 0.75rem;
+    }
+
+    /* Styling untuk admin button */
+    .btn-warning small {
+        line-height: 1;
+        margin-top: 2px;
+    }
+
+    /* Alert styling */
+    .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
     }
 </style>
 @endsection

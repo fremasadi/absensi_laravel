@@ -44,11 +44,8 @@ public static function getNavigationGroup(): ?string
                     ])
                     ->required()
                     ->default('user'),
-                    Forms\Components\FileUpload::make('image')
-                    ->image()
-                    ->disk('public')
-                    ->directory('user-images')
-,                
+                Forms\Components\FileUpload::make('image')
+                    ->image(),
                 Forms\Components\TextInput::make('phone')
                     ->tel()
                     ->maxLength(255),

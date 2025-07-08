@@ -36,7 +36,7 @@ Route::middleware(['auth', EnsureRoleIsUser::class])->group(function () {
     // Route baru untuk upload bukti
     Route::post('/permintaan-izin/{permintaanIzin}/upload-bukti', [PermintaanIzinController::class, 'uploadBukti'])
     ->name('permintaan-izin.upload-bukti');
-    Route::put('/permintaan-izin/{permintaanIzin}/upload-bukti', [PermintaanIzinController::class, 'uploadBukti'])->name('permintaan-izin.upload-bukti');
+    Route::put('/permintaan-izin/{id}/upload-bukti', [PermintaanIzinController::class, 'uploadBukti'])->name('permintaan-izin.upload-bukti');
 
     // Option 2: Menggunakan PUT untuk update
     Route::put('/permintaan-izin/{permintaanIzin}/upload-bukti', [PermintaanIzinController::class, 'uploadBukti'])
