@@ -30,24 +30,38 @@ class PermintaanIzin extends Model
         'status' => 'boolean',
     ];
 
+    // Debug: log setiap kali image di-set
+    public function setImageAttribute($value)
+    {
+        \Log::info('Setting image attribute:', ['value' => $value]);
+        
+        if ($value) {
+            $this->attributes['image'] = $value;
+            $this->attributes['bukti_uploaded_at'] = now();
+            \Log::info('Image set successfully:', ['image' => $value]);
+        } else {
+            \Log::info('Image value is null or empty');
+        }
+    }
+
+    // Debug: log setiap kali image di-get
+    public function getImageAttribute($value)
+    {
+        \Log::info('Getting image attribute:', ['value' => $value]);
+        return $value;
+    }
+
     // Relasi dengan model User
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    // Accessor untuk mendapatkan URL gambar
-    public function getImageUrlAttribute()
+    // Method untuk cek apakah field image ada di fillable
+    public static function checkFillable()
     {
-        return $this->image ? Storage::url($this->image) : null;
-    }
-
-    // Mutator untuk handle upload
-    public function setImageAttribute($value)
-    {
-        if ($value) {
-            $this->attributes['image'] = $value;
-            $this->attributes['bukti_uploaded_at'] = now();
-        }
+        $instance = new static;
+        \Log::info('Fillable fields:', $instance->getFillable());
+        return in_array('image', $instance->getFillable());
     }
 }

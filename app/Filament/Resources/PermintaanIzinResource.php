@@ -31,46 +31,93 @@ class PermintaanIzinResource extends Resource
         return 'Manajemen Absensi';
     }
 
-    public static function form(Form $form): Form
-{
-    return $form
-        ->schema([
-            Forms\Components\Select::make('user_id')
-                ->relationship('user', 'name')
-                ->required(),
-            Forms\Components\DatePicker::make('tanggal_mulai')
-                ->required(),
-            Forms\Components\DatePicker::make('tanggal_selesai')
-                ->required(),
-            Forms\Components\Select::make('jenis_izin')
-                ->label('Jenis Izin')
-                ->options([
-                    'Sakit' => 'Sakit',
-                    'Cuti' => 'Cuti',
-                    'Keperluan Keluarga' => 'Keperluan Keluarga',
-                    'Lainnya' => 'Lainnya',
-                ])
-                ->required(),
-            Forms\Components\Textarea::make('alasan')
-                ->required()
-                ->columnSpanFull(),
-            Forms\Components\FileUpload::make('image')
-                ->label('Bukti Pendukung')
-                ->image()
-                ->directory('permintaan-izin') // Tentukan folder penyimpanan
-                ->visibility('private') // atau 'public'
-                ->maxSize(2048) // Maksimal 2MB
-                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
-                ->imageEditor() // Tambahkan image editor
-                ->imageResizeMode('contain')
-                ->imageCropAspectRatio(null)
-                ->imageResizeTargetWidth('1920')
-                ->imageResizeTargetHeight('1080')
-                ->nullable(), // Pastikan nullable jika tidak required
-            Forms\Components\Toggle::make('status')
-                ->required(),
-        ]);
-}
+        // Method untuk debug data sebelum create
+        protected function mutateFormDataBeforeCreate(array $data): array
+        {
+            \Log::info('Data sebelum create PermintaanIzin:', $data);
+            
+            // Cek apakah ada data image
+            if (isset($data['image'])) {
+                \Log::info('Image data found:', ['image' => $data['image']]);
+            } else {
+                \Log::info('No image data found in form data');
+            }
+            
+            return $data;
+        }
+    
+        // Method untuk debug data sebelum update
+        protected function mutateFormDataBeforeSave(array $data): array
+        {
+            \Log::info('Data sebelum save PermintaanIzin:', $data);
+            
+            if (isset($data['image'])) {
+                \Log::info('Image data found:', ['image' => $data['image']]);
+            } else {
+                \Log::info('No image data found in form data');
+            }
+            
+            return $data;
+        }
+    
+        // Method untuk debug setelah create
+        protected function afterCreate(): void
+        {
+            \Log::info('Record created:', $this->record->toArray());
+        }
+    
+        // Method untuk debug setelah save
+        protected function afterSave(): void
+        {
+            \Log::info('Record saved:', $this->record->toArray());
+        }
+    
+        // Form dengan debugging tambahan
+        public static function form(Form $form): Form
+        {
+            return $form
+                ->schema([
+                    Forms\Components\Select::make('user_id')
+                        ->relationship('user', 'name')
+                        ->required(),
+                    Forms\Components\DatePicker::make('tanggal_mulai')
+                        ->required(),
+                    Forms\Components\DatePicker::make('tanggal_selesai')
+                        ->required(),
+                    Forms\Components\Select::make('jenis_izin')
+                        ->label('Jenis Izin')
+                        ->options([
+                            'Sakit' => 'Sakit',
+                            'Cuti' => 'Cuti',
+                            'Keperluan Keluarga' => 'Keperluan Keluarga',
+                            'Lainnya' => 'Lainnya',
+                        ])
+                        ->required(),
+                    Forms\Components\Textarea::make('alasan')
+                        ->required()
+                        ->columnSpanFull(),
+                    Forms\Components\FileUpload::make('image')
+                        ->label('Bukti Pendukung')
+                        ->image()
+                        ->directory('permintaan-izin')
+                        ->disk('public')
+                        ->visibility('public')
+                        ->maxSize(2048)
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                        ->afterStateUpdated(function (callable $set, $state) {
+                            // Debug: log ketika file di-upload
+                            \Log::info('File uploaded:', ['file' => $state]);
+                            if ($state) {
+                                $set('bukti_uploaded_at', now());
+                            }
+                        })
+                        ->dehydrated(true) // Pastikan field ini di-include saat form submission
+                        ->nullable(),
+                    Forms\Components\Toggle::make('status')
+                        ->required(),
+                ]);
+        }
+    
 
     public static function table(Table $table): Table
     {
